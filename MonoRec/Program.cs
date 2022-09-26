@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using MonoRec.Data;
 using MonoRec.Models;
+using MonoRec.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,9 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+builder.Services.AddControllers();
+builder.Services.AddScoped<IMonoRecRepository, MonoRecRepository>();
 
 var app = builder.Build();
 
@@ -53,6 +58,43 @@ app.UseAuthorization();
 //    pattern: "{controller}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapRazorPages();
+
+//app.UseMvc();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
+
+
+//app.MapWhen(x => x.Request.Path.Value.StartsWith("/api"), builder =>
+//{
+//    app.UseMvc();
+//});
+
+//app.MapWhen(x => !x.Request.Path.Value.StartsWith("/api"), builder =>
+//{
+//    app.UseSpa(spa =>
+//    {
+//        spa.Options.SourcePath = "ClientApp";
+
+//        if (env.IsDevelopment())
+//        {
+//            spa.UseReactDevelopmentServer(npmScript: "start");
+//        }
+//    });
+//});
+
+
+//app.MapWhen(x => !x.Request.Path.Value.StartsWith("/api"), builder =>
+//{
+//    app.Run(async (context) =>
+//    {
+//        context.Response.ContentType = "text/html";
+//        context.Response.Headers[HeaderNames.CacheControl] = "no-store, no-cache, must-revalidate";
+//        await context.Response.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
+//    });
+//});
 
 app.MapFallbackToFile("index.html"); ;
 

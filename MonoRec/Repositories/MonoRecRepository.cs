@@ -16,12 +16,13 @@ namespace MonoRec.Repositories
 
         public IEnumerable<Patient> GetAllPatients()
         {
-            return _db.Patients.ToList();
+            var test =_db.Patients.ToList();
+            return test;
         }
 
-        public Patient CreateNewPatient(string name, int age)
+        public Patient CreateNewPatient(string name)
         {
-            var newPatient = new Patient(name, age);
+            var newPatient = new Patient(name);
             _db.Patients.Add(newPatient);
             _db.SaveChanges();
             return newPatient;

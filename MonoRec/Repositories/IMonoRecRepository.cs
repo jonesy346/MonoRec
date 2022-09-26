@@ -6,6 +6,6 @@ namespace MonoRec.Repositories
     public interface IMonoRecRepository
     {
         IEnumerable<Patient> GetAllPatients();
-        Patient CreateNewPatient(string name, int age);
+        Patient CreateNewPatient(string name);
     }
 }

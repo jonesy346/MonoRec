@@ -5,8 +5,8 @@ using MonoRec.Repositories;
 
 namespace MonoRec.Controllers;
 
+[Route("api/[controller]")]
 [ApiController]
-[Route("[controller]")]
 public class PatientController : ControllerBase
 {
     // GET: 
@@ -20,13 +20,15 @@ public class PatientController : ControllerBase
     [HttpGet]
     public IEnumerable<Patient> GetAllPatients()
     {
-        return _monoRecRepository.GetAllPatients();
+        Console.WriteLine("get method function ran");
+        var controllerTest = _monoRecRepository.GetAllPatients();
+        return controllerTest;
     }
 
     [HttpPost]
-    public Patient CreateNewPatient(string name, int age)
+    public Patient CreateNewPatient(string name)
     {
-        return _monoRecRepository.CreateNewPatient(name, age);
+        return _monoRecRepository.CreateNewPatient(name);
     }
 
 }
