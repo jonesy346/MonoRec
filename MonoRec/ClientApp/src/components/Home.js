@@ -10,12 +10,12 @@ function Home() {
 
     useEffect(() => {
         populatePatients();
-    }, [Patients]);
+    });
 
     const populatePatients = async () => {
         //const token = await authService.getAccessToken();
         //const user = await authService.getUser();
-        const response = await fetch('/api/patient', { method: 'GET' })
+        const response = await fetch('patient', { method: 'GET' })
 
     //        , {
     //            headers: !token ? {} : { 'Authorization': `Bearer ${token}` }

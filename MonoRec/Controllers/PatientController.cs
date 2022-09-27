@@ -5,7 +5,7 @@ using MonoRec.Repositories;
 
 namespace MonoRec.Controllers;
 
-[Route("api/[controller]")]
+[Route("[controller]")]
 [ApiController]
 public class PatientController : ControllerBase
 {
