@@ -10,7 +10,7 @@ function Home() {
 
     useEffect(() => {
         populatePatients();
-    });
+    }, [Patients]);
 
     const populatePatients = async () => {
         //const token = await authService.getAccessToken();

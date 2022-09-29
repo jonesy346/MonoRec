@@ -5,11 +5,11 @@ using System.Security.Claims;
 
 namespace MonoRec.Repositories
 {
-    public class MonoRecRepository : IMonoRecRepository
+    public class PatientRepository : IPatientRepository
     {
         MonoRecDbContext _db;
 
-        public MonoRecRepository(MonoRecDbContext db)
+        public PatientRepository(MonoRecDbContext db)
         {
             _db = db;
         }
@@ -29,3 +29,4 @@ namespace MonoRec.Repositories
         }
     }
 }
+

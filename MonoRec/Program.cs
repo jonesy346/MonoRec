@@ -30,7 +30,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IMonoRecRepository, MonoRecRepository>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
+builder.Services.AddScoped<IVisitRepository, VisitRepository>();
 
 var app = builder.Build();
 

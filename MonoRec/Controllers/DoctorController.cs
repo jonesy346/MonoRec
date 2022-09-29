@@ -7,28 +7,28 @@ namespace MonoRec.Controllers;
 
 [Route("[controller]")]
 [ApiController]
-public class PatientController : ControllerBase
+public class DoctorController : ControllerBase
 {
     // GET: 
-    private IPatientRepository _monoRecRepository;
+    private IDoctorRepository _monoRecRepository;
 
-    public PatientController(IPatientRepository monoRecRepository)
+    public DoctorController(IDoctorRepository monoRecRepository)
     {
         _monoRecRepository = monoRecRepository;
     }
 
     [HttpGet]
-    public IEnumerable<Patient> GetAllPatients()
+    public IEnumerable<Doctor> GetAllDoctors()
     {
         Console.WriteLine("get method function ran");
-        var controllerTest = _monoRecRepository.GetAllPatients();
+        var controllerTest = _monoRecRepository.GetAllDoctors();
         return controllerTest;
     }
 
     [HttpPost("{name}")]
-    public Patient CreateNewPatient(string name)
+    public Doctor CreateNewDoctor(string name)
     {
-        return _monoRecRepository.CreateNewPatient(name);
+        return _monoRecRepository.CreateNewDoctor(name);
     }
 
 }

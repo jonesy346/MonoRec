@@ -8,6 +8,16 @@ public class Visit
     //public DateTime VisitDate { get; set; }
     //public string? Symptoms { get; set; }
     //public string? Diagnosis { get; set; }
+
+
+    public Visit() { }
+
+    public Visit(int patId, int docId)
+    {
+        PatientId = patId;
+        DoctorId = docId;
+    }
+    
 }
 
 
