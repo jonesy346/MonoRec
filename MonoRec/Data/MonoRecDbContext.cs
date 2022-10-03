@@ -9,10 +9,10 @@ public class MonoRecDbContext : DbContext
     {
 
     }
-    
        
     public DbSet<Doctor> Doctors { get; set; }
     public DbSet<Patient> Patients { get; set; }
+    public DbSet<DoctorPatient> DoctorsPatients { get; set; }
     public DbSet<Visit> Visits { get; set; }
     public DbSet<DoctorNote> DoctorNotes { get; set; }
 }

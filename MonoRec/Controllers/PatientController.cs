@@ -20,15 +20,38 @@ public class PatientController : ControllerBase
     [HttpGet]
     public IEnumerable<Patient> GetAllPatients()
     {
-        Console.WriteLine("get method function ran");
-        var controllerTest = _monoRecRepository.GetAllPatients();
-        return controllerTest;
+        return _monoRecRepository.GetAllPatients();
+    }
+
+    [HttpGet("{patId}")]
+    public Patient GetPatient(int patId)
+    {
+        return _monoRecRepository.GetPatient(patId);
     }
 
     [HttpPost("{name}")]
     public Patient CreateNewPatient(string name)
     {
         return _monoRecRepository.CreateNewPatient(name);
+    }
+
+    [HttpGet("{patId}/doctor")]
+    public IEnumerable<Doctor> GetAllDoctorsByPatient(int patId)
+    {
+        return _monoRecRepository.GetAllDoctorsByPatient(patId);
+
+    }
+
+    [HttpPost("{patId}/doctor/{docId}")]
+    public Doctor AddNewDoctorForPatient(int patId, int docId)
+    {
+        return _monoRecRepository.AddNewDoctorForPatient(patId, docId);
+    }
+
+    [HttpDelete("{patId}/doctor/{docId}")]
+    public Doctor DeleteDoctorForPatient(int patId, int docId)
+    {
+        return _monoRecRepository.DeleteDoctorForPatient(patId, docId);
     }
 
 }

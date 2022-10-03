@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Xml.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
 using MonoRec.Repositories;
@@ -20,10 +21,15 @@ public class DoctorController : ControllerBase
     [HttpGet]
     public IEnumerable<Doctor> GetAllDoctors()
     {
-        Console.WriteLine("get method function ran");
-        var controllerTest = _monoRecRepository.GetAllDoctors();
-        return controllerTest;
+        return _monoRecRepository.GetAllDoctors();
     }
+
+    [HttpGet("{docId}")]
+    public Doctor GetDoctor(int docId)
+    {
+        return _monoRecRepository.GetDoctor(docId);
+    }
+
 
     [HttpPost("{name}")]
     public Doctor CreateNewDoctor(string name)
@@ -31,5 +37,23 @@ public class DoctorController : ControllerBase
         return _monoRecRepository.CreateNewDoctor(name);
     }
 
+    [HttpGet("{docId}/patient")]
+    public IEnumerable<Patient> GetAllPatientsByDoctor(int docId)
+    {
+        return _monoRecRepository.GetAllPatientsByDoctor(docId);
+
+    }
+
+    [HttpPost("{docId}/patient/{patId}")]
+    public Patient AddNewPatientForDoctor(int docId, int patId)
+    {
+        return _monoRecRepository.AddNewPatientForDoctor(docId, patId);
+    }
+
+    [HttpDelete("{docId}/patient/{patId}")]
+    public Patient DeletePatientForDoctor(int docId, int patId)
+    {
+        return _monoRecRepository.DeletePatientForDoctor(docId, patId);
+    }
 }
 

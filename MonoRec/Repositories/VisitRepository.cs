@@ -17,8 +17,14 @@ namespace MonoRec.Repositories
 
         public IEnumerable<Visit> GetAllVisits()
         {
-            var test = _db.Visits.ToList();
-            return test;
+            var visits = _db.Visits.ToList();
+            return visits;
+        }
+
+        public Visit GetVisit(int VisitId)
+        {
+            var visit = _db.Visits.Where(visit => visit.VisitId == VisitId).First();
+            return visit;
         }
 
         public Visit CreateNewVisit(int PatientId, int DoctorId)
@@ -49,9 +55,18 @@ namespace MonoRec.Repositories
             return selectResult;
         }
 
+        public IEnumerable<Visit> GetAllVisitsByDoctorPatient(int DoctorId, int PatientId)
+        {
+            var visits = _db.Visits.ToList();
+            var selectResult = from visit in visits
+                               where visit.DoctorId == DoctorId && visit.PatientId == PatientId
+                               select visit;
+
+            return selectResult;
+        }
+
         public Visit DeleteVisit(int VisitId)
         {
-  
             var visitToDelete = _db.Visits.Where(visit => visit.VisitId == VisitId).First();
             _db.Visits.Remove(visitToDelete);
             _db.SaveChanges();

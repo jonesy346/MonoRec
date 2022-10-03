@@ -24,6 +24,12 @@ public class VisitController : ControllerBase
         return controllerTest;
     }
 
+    [HttpGet("{visitId}")]
+    public Visit GetVisit(int visitId)
+    {
+        return _monoRecRepository.GetVisit(visitId);
+    }
+
     [HttpPost("{patId}/{docId}")]
     public Visit CreateNewVisit(int patId, int docId)
     {
@@ -44,6 +50,13 @@ public class VisitController : ControllerBase
         return controllerTest;
     }
 
+    [HttpGet("patient/{patId}/doctor/{docId}")]
+    [HttpGet("doctor/{docId}/patient/{patId}")]
+    public IEnumerable<Visit> GetAllVistsByDoctorPatient(int docId, int patId)
+    {
+        return _monoRecRepository.GetAllVisitsByDoctorPatient(docId, patId);
+    }
+
     // Only doctors should be able to delete a visit. Implement authorization later
 
     [HttpDelete("{visitId}")]
@@ -52,8 +65,5 @@ public class VisitController : ControllerBase
         var controllerTest = _monoRecRepository.DeleteVisit(visitId);
         return controllerTest;
     }
-
-
-
 }
 

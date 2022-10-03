@@ -12,7 +12,7 @@ public class Doctor
     //public IList<Patient>? Patients { get; set; }
     //public IList<Visit>? Visits { get; set; }
     //public IList<DoctorNote>? DoctorNotes { get; set; }
-    
+
     public Doctor() { }
 
     public Doctor(string Name)
