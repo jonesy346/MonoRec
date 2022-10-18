@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import authService from './api-authorization/AuthorizeService'
 
-export function Patient(props) {
+function Patients(props) {
 
     const [Date, setDate] = useState('');
     const [Notes, setNotes] = useState('');
@@ -66,3 +66,5 @@ export function Patient(props) {
         </div>
     );
 }
+
+export default Patients;
