@@ -9,7 +9,7 @@ function Doctors(props) {
 
     useEffect(() => {
         populateDoctors();
-    }, [Doctors]);
+    }, []);
 
     const incrementDoctorId = () => {
         setDoctorId(DoctorId + 1);
@@ -25,8 +25,8 @@ function Doctors(props) {
     const tableRows = Doctors.map((val, key) => {
         return (
             <tr key={key}>
-                <td>{val.DoctorId}</td>
-                <td>{val.DoctorName}</td>
+                <td>{val.doctorId}</td>
+                <td>{val.doctorName}</td>
                 <td></td>
             </tr>
         );

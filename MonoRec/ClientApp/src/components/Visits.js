@@ -47,9 +47,9 @@ function Visits(props) {
                     {Visits.map((val, key) => {
                         return (
                             <tr key={key}>
-                                <td>{val.VisitId}</td>
-                                <td>{val.PatientId}</td>
-                                <td>{val.DoctorId}</td>
+                                <td>{val.visitId}</td>
+                                <td>{val.patientId}</td>
+                                <td>{val.doctorId}</td>
                                 <td></td>
                             </tr>
                         )

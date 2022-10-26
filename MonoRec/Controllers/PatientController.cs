@@ -25,22 +25,17 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{patId}")]
-    public Patient GetPatient(int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Patient))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetPatient(int patId)
     {
         // add if statement for if this returns null, do this for all parameters
 
         var patient = _monoRecRepository.GetPatient(patId);
 
-        if (patient == null)
-        {
-            throw new ArgumentOutOfRangeException();
-            //ask Jason if this is correct
+        if (patient == null) return NotFound();
 
-            //return new HttpNotFoundResult(); 
-            //above line is for rendering a view
-        }
-
-        return patient;
+        return Ok(patient);
     }
 
     [HttpPost("{name}")]

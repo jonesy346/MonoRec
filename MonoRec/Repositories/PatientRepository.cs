@@ -23,7 +23,7 @@ namespace MonoRec.Repositories
             return patients;
         }
 
-        public Patient GetPatient(int patId)
+        public Patient? GetPatient(int patId)
         {
             var patient = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
             return patient;
