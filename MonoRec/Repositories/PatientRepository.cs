@@ -28,7 +28,6 @@ namespace MonoRec.Repositories
             var patient = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
             return patient;
 
-            // create conditional to check if patient is in database, if not throw error
         }
 
         public Patient CreateNewPatient(string name)
@@ -39,7 +38,7 @@ namespace MonoRec.Repositories
             return newPatient;
         }
 
-        public IEnumerable<Doctor> GetAllDoctorsByPatient(int patId)
+        public IEnumerable<Doctor>? GetAllDoctorsByPatient(int patId)
         {
             var patient = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
 
@@ -56,11 +55,9 @@ namespace MonoRec.Repositories
 
             return innerJoin.ToList();
             
-            // create conditional to check if patient is in database, if not throw error - still works, but change response to error anyways
-            // if no doctors are available for patient, then this currently returns empty list (which I think is fine to keep)
         }
 
-        public Doctor AddNewDoctorForPatient(int patId, int docId)
+        public Doctor? AddNewDoctorForPatient(int patId, int docId)
         {
             var doctorToAdd = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
             var patientToModify = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
@@ -73,10 +70,9 @@ namespace MonoRec.Repositories
 
             return doctorToAdd;
 
-            // create conditional to check if patient is in database, if not throw error
         }
 
-        public Doctor DeleteDoctorForPatient(int patId, int docId)
+        public Doctor? DeleteDoctorForPatient(int patId, int docId)
         {
             var doctorToDelete = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
             var patientToModify = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
@@ -89,7 +85,6 @@ namespace MonoRec.Repositories
 
             return doctorToDelete;
 
-            // create conditional to check if patient is in database, if not throw error
         }
     }
 }

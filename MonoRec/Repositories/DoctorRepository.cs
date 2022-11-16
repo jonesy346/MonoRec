@@ -20,9 +20,9 @@ public class DoctorRepository : IDoctorRepository
         return doctors;
     }
 
-    public Doctor GetDoctor(int docId)
+    public Doctor? GetDoctor(int docId)
     {
-        var doctor = _db.Doctors.Where(doctor => doctor.DoctorId == docId).First();
+        var doctor = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
         return doctor;
 
         // create conditional to check if patient is in database, if not throw error
@@ -36,8 +36,12 @@ public class DoctorRepository : IDoctorRepository
         return newDoctor;
     }
 
-    public IEnumerable<Patient> GetAllPatientsByDoctor(int docId)
+    public IEnumerable<Patient>? GetAllPatientsByDoctor(int docId)
     {
+        var doctor = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
+
+        if (doctor == null) return null;
+
         var patients = _db.Patients.ToList();
         var doctorsPatients = _db.DoctorsPatients.ToList();
 
@@ -50,23 +54,32 @@ public class DoctorRepository : IDoctorRepository
         return innerJoin.ToList();
     }
 
-    public Patient AddNewPatientForDoctor(int docId, int patId)
+    public Patient? AddNewPatientForDoctor(int docId, int patId)
     {
+
+        var patientToAdd = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
+        var doctorToModify = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
+
+        if (patientToAdd == null || doctorToModify == null) return null;
+
         var newDoctorPatient = new DoctorPatient(docId, patId);
         _db.DoctorsPatients.Add(newDoctorPatient);
         _db.SaveChanges();
-	    
-	    var patientToAdd = _db.Patients.Where(patient => patient.PatientId == patId).First();
-	    return patientToAdd;
+
+        return patientToAdd;
     }
 
-    public Patient DeletePatientForDoctor(int docId, int patId)
+    public Patient? DeletePatientForDoctor(int docId, int patId)
     {
+        var patientToDelete = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
+        var doctorToModify = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
+
+        if (patientToDelete == null || doctorToModify == null) return null;
+
         var doctorPatientToDelete = _db.DoctorsPatients.Where(doctorPatient => doctorPatient.DoctorId == docId && doctorPatient.PatientId == patId).First();
         _db.DoctorsPatients.Remove(doctorPatientToDelete);
         _db.SaveChanges();
 
-        var patientToDelete = _db.Patients.Where(patient => patient.PatientId == patId).First();
         return patientToDelete;
     }
 

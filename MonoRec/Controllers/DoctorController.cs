@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.IO;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
@@ -25,9 +26,15 @@ public class DoctorController : ControllerBase
     }
 
     [HttpGet("{docId}")]
-    public Doctor GetDoctor(int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Doctor))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetDoctor(int docId)
     {
-        return _monoRecRepository.GetDoctor(docId);
+        var doctor = _monoRecRepository.GetDoctor(docId);
+
+        if (doctor == null) return NotFound();
+
+        return Ok(doctor);
     }
 
 
@@ -38,22 +45,40 @@ public class DoctorController : ControllerBase
     }
 
     [HttpGet("{docId}/patient")]
-    public IEnumerable<Patient> GetAllPatientsByDoctor(int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Patient>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAllPatientsByDoctor(int docId)
     {
-        return _monoRecRepository.GetAllPatientsByDoctor(docId);
+        var result = _monoRecRepository.GetAllPatientsByDoctor(docId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
 
     }
 
     [HttpPost("{docId}/patient/{patId}")]
-    public Patient AddNewPatientForDoctor(int docId, int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Patient))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult AddNewPatientForDoctor(int docId, int patId)
     {
-        return _monoRecRepository.AddNewPatientForDoctor(docId, patId);
+        var result = _monoRecRepository.AddNewPatientForDoctor(docId, patId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 
     [HttpDelete("{docId}/patient/{patId}")]
-    public Patient DeletePatientForDoctor(int docId, int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Patient))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult DeletePatientForDoctor(int docId, int patId)
     {
-        return _monoRecRepository.DeletePatientForDoctor(docId, patId);
+        var result = _monoRecRepository.DeletePatientForDoctor(docId, patId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 }
 

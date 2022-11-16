@@ -5,6 +5,12 @@ namespace MonoRec.Data;
 
 public class MonoRecDbContext : DbContext
 {
+
+    // this first constructor was solely needed for the GetAll method in unit testing
+    public MonoRecDbContext()
+    {
+    }
+
     public MonoRecDbContext(DbContextOptions<MonoRecDbContext> options) : base(options)
     {
 

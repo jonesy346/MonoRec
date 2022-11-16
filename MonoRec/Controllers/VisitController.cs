@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.IO;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
 using MonoRec.Repositories;
@@ -25,45 +26,72 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("{visitId}")]
-    public Visit GetVisit(int visitId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetVisit(int visitId)
     {
-        return _monoRecRepository.GetVisit(visitId);
+        var visit = _monoRecRepository.GetVisit(visitId);
+
+        if (visit == null) return NotFound();
+
+        return Ok(visit);
     }
 
     [HttpPost("{patId}/{docId}")]
-    public Visit CreateNewVisit(int patId, int docId)
+    public Visit? CreateNewVisit(int patId, int docId)
     {
         return _monoRecRepository.CreateNewVisit(patId, docId);
     }
 
     [HttpGet("patient/{patId}")]
-    public IEnumerable<Visit> GetAllVisitsByPatient(int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAllVisitsByPatient(int patId)
     {
-        var controllerTest = _monoRecRepository.GetAllVisitsByPatient(patId);
-        return controllerTest;
+        var result = _monoRecRepository.GetAllVisitsByPatient(patId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 
     [HttpGet("doctor/{docId}")]
-    public IEnumerable<Visit> GetAllVisitsByDoctor(int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAllVisitsByDoctor(int docId)
     {
-        var controllerTest = _monoRecRepository.GetAllVisitsByDoctor(docId);
-        return controllerTest;
+        var result = _monoRecRepository.GetAllVisitsByDoctor(docId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 
     [HttpGet("patient/{patId}/doctor/{docId}")]
     [HttpGet("doctor/{docId}/patient/{patId}")]
-    public IEnumerable<Visit> GetAllVistsByDoctorPatient(int docId, int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAllVistsByDoctorPatient(int docId, int patId)
     {
-        return _monoRecRepository.GetAllVisitsByDoctorPatient(docId, patId);
+        var result = _monoRecRepository.GetAllVisitsByDoctorPatient(docId, patId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 
     // Only doctors should be able to delete a visit. Implement authorization later
 
     [HttpDelete("{visitId}")]
-    public Visit DeleteVisit(int visitId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult DeleteVisit(int visitId)
     {
-        var controllerTest = _monoRecRepository.DeleteVisit(visitId);
-        return controllerTest;
+        var result = _monoRecRepository.DeleteVisit(visitId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 }
 

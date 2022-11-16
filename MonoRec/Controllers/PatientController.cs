@@ -48,26 +48,44 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{patId}/doctor")]
-    public IEnumerable<Doctor> GetAllDoctorsByPatient(int patId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Doctor>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAllDoctorsByPatient(int patId)
     {
-        return _monoRecRepository.GetAllDoctorsByPatient(patId);
+        var result = _monoRecRepository.GetAllDoctorsByPatient(patId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
 
         // throw error if patient not found, ask Jason how to do this in linq query
 
     }
 
     [HttpPost("{patId}/doctor/{docId}")]
-    public Doctor AddNewDoctorForPatient(int patId, int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Doctor))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult AddNewDoctorForPatient(int patId, int docId)
     {
-        return _monoRecRepository.AddNewDoctorForPatient(patId, docId);
+        var result = _monoRecRepository.AddNewDoctorForPatient(patId, docId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
 
         // ask if we need to declare method return types (in repository) as nullable, and edit interface/repository if necessary 
     }
 
     [HttpDelete("{patId}/doctor/{docId}")]
-    public Doctor DeleteDoctorForPatient(int patId, int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Doctor))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult DeleteDoctorForPatient(int patId, int docId)
     {
-        return _monoRecRepository.DeleteDoctorForPatient(patId, docId);
+        var result = _monoRecRepository.DeleteDoctorForPatient(patId, docId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
 
         // should delete route return something? the object that was deleted?
     }
