@@ -48,22 +48,23 @@ public class PatientControllerTests
 
     // !Get Help with this
     // GetAllPatients
-    //[Test]
-    //public void GetAllPatients_CallsRepositoryFunction_ShouldReturnAllPatients()
-    //{
+    [Test]
+    public void GetAllPatients_CallsRepositoryFunction_ShouldReturnAllPatients()
+    {
+        patients.Add(new Patient { PatientId = 1 });
+        patients.Add(new Patient { PatientId = 2 });
+        patients.Add(new Patient { PatientId = 3 });
 
-    //    var context = new MonoRecDbContext();
+        IEnumerable<Patient> patientTable = patients;
 
-    //    context.Patients.Add(new Patient { PatientId = 1 });
-    //    context.Patients.Add(new Patient { PatientId = 2 });
-    //    context.Patients.Add(new Patient { PatientId = 3 });
+        _mockRepo.Setup(x => x.GetAllPatients()).Returns(patientTable);
 
-    //    var result = _controller.GetAllPatients() as Patients;
-    //    _mockRepo.Setup(x => x.GetPatient(42)).Returns(new Patient { PatientId = 42 });
+        IEnumerable<Patient> result = _controller.GetAllPatients();
 
-    //    Assert.IsNotNull(result);
-    //    Assert.AreEqual(3, result.Local.count); 
-    //}
+        Assert.That(result, Is.EqualTo(patientTable)); 
+    }
+
+    // Add test case to check if correct function is called
 
     // GetPatient
     [Test]
@@ -79,6 +80,8 @@ public class PatientControllerTests
     [Test]
     public void GetPatient_PatientNotFound_Throw404()
     {
+        _mockRepo.Setup(x => x.GetPatient(-1)).Returns((Patient)null);
+
         IActionResult actionResult = _controller.GetPatient(-1);
 
         Assert.That(actionResult, Is.InstanceOf<NotFoundResult>());
@@ -86,19 +89,19 @@ public class PatientControllerTests
 
 
     // !Fix this later
-    //[Test]
-    //public void GetPatient_ValidPatientId_ReturnsOkResultWithPatient()
-    //{
-    //    _mockRepo.Setup(x => x.GetPatient(42)).Returns(new Patient { PatientId = 42 });
+    [Test]
+    public void GetPatient_ValidPatientId_ReturnsOkResultWithPatient()
+    {
+        _mockRepo.Setup(x => x.GetPatient(42)).Returns(new Patient { PatientId = 42 });
 
-    //    IActionResult actionResult = _controller.GetPatient(42);
-    //    // I think the next line is the problem
-    //    var contentResult = actionResult as OkObjectResult;
+        IActionResult actionResult = _controller.GetPatient(42);
+        // I think the next line is the problem
+        var contentResult = actionResult as OkObjectResult;
+        var patientObject = contentResult.Value as Patient;
 
-    //    Assert.IsNotNull(contentResult);
-    //    Assert.IsNotNull(contentResult.ContentTypes);
-    //    Assert.AreEqual(42, contentResult.ContentTypes.PatientId);
-    //}
+        Assert.That(contentResult.StatusCode, Is.EqualTo(200));
+        Assert.That(patientObject.PatientId, Is.EqualTo(42));
+    }
 
     // !Need to also incorporate test that tests domain model type perhaps
     //[Test] {insert code}
@@ -107,16 +110,24 @@ public class PatientControllerTests
     [Test]
     public void GetAllDoctorsByPatient_CallsRepositoryFunction_VerifyCorrectFunctionIsCalled()
     {
-        _mockRepo.Setup(x => x.GetPatient(42)).Returns(new Patient { PatientId = 42 });
+        doctors.Add(new Doctor { DoctorId = 1 });
+        doctors.Add(new Doctor { DoctorId = 2 });
+        doctors.Add(new Doctor { DoctorId = 3 });
 
-        IActionResult actionResult = _controller.GetPatient(42);
+        IEnumerable<Doctor> doctorTable = doctors;
 
-        _mockRepo.Verify(x => x.GetPatient(42), Times.Once());
+        _mockRepo.Setup(x => x.GetAllDoctorsByPatient(42)).Returns(doctorTable);
+
+        IActionResult actionResult = _controller.GetAllDoctorsByPatient(42);
+
+        _mockRepo.Verify(x => x.GetAllDoctorsByPatient(42), Times.Once());
     }
 
     [Test]
     public void GetAllDoctorsByPatient_PatientNotFound_Throw404()
     {
+        _mockRepo.Setup(x => x.GetAllDoctorsByPatient(-1)).Returns((IEnumerable<Doctor>)null);
+
         IActionResult actionResult = _controller.GetAllDoctorsByPatient(-1);
 
         Assert.That(actionResult, Is.InstanceOf<NotFoundResult>());
@@ -124,27 +135,24 @@ public class PatientControllerTests
 
 
     // !Fix this later, how do you test this?!
-    //[Test]
-    //public void GetAllDoctorsByPatient_ValidPatientId_ReturnsListOfDoctors()
-    //{
-    //    doctors.Add(new Doctor { DoctorId = 1 });
-    //    doctors.Add(new Doctor { DoctorId = 2 });
-    //    doctors.Add(new Doctor { DoctorId = 3 });
+    [Test]
+    public void GetAllDoctorsByPatient_ValidPatientId_ReturnsListOfDoctors()
+    {
+        doctors.Add(new Doctor { DoctorId = 1 });
+        doctors.Add(new Doctor { DoctorId = 2 });
+        doctors.Add(new Doctor { DoctorId = 3 });
 
-    //    IEnumerable<Doctor> doctorTable = doctors; 
+        IEnumerable<Doctor> doctorTable = doctors; 
 
-    //    _mockRepo.Setup(x => x.GetAllDoctorsByPatient(42)).Returns(doctorTable);
+        _mockRepo.Setup(x => x.GetAllDoctorsByPatient(42)).Returns(doctorTable);
 
-    //    IActionResult actionResult = _controller.GetAllDoctorsByPatient(42);
-    //    // I think the next line is the problem
-    //    var contentResult = actionResult as OkObjectResult;
+        IActionResult actionResult = _controller.GetAllDoctorsByPatient(42);
+        // I think the next line is the problem
+        var contentResult = actionResult as OkObjectResult;
+        var doctorObject = contentResult.Value as IEnumerable<Doctor>;
 
-    //    Assert.IsNotNull(contentResult);
-    //    Assert.IsNotNull(contentResult.ContentTypes);
-    //    Assert.AreEqual(42, contentResult.ContentTypes.PatientId);
-
-    //    Assert.That(actionResult.Model, Is.TypeOf<IEnumerable>());
-    //}
+        Assert.That(doctorObject.Count, Is.EqualTo(3));
+    }
 
     // AddNewDoctorForPatient
     [Test]
@@ -157,6 +165,7 @@ public class PatientControllerTests
         _mockRepo.Verify(x => x.GetPatient(42), Times.Once());
     }
 
+    // add moqrepo setup
     [Test]
     [TestCase(-1, 5)]
     [TestCase(10000, 5)]
@@ -205,6 +214,7 @@ public class PatientControllerTests
         _mockRepo.Verify(x => x.GetPatient(42), Times.Once());
     }
 
+    // add moqrepo setup
     [Test]
     [TestCase(-1, 5)]
     [TestCase(10000, 5)]

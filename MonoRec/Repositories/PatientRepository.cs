@@ -57,6 +57,7 @@ namespace MonoRec.Repositories
             
         }
 
+        // return boolean or message, doesn't have to be strict
         public Doctor? AddNewDoctorForPatient(int patId, int docId)
         {
             var doctorToAdd = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
