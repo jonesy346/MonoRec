@@ -38,9 +38,15 @@ public class VisitController : ControllerBase
     }
 
     [HttpPost("{patId}/{docId}")]
-    public Visit? CreateNewVisit(int patId, int docId)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult CreateNewVisit(int patId, int docId)
     {
-        return _monoRecRepository.CreateNewVisit(patId, docId);
+        var result = _monoRecRepository.CreateNewVisit(patId, docId);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 
     [HttpGet("patient/{patId}")]
@@ -71,7 +77,7 @@ public class VisitController : ControllerBase
     [HttpGet("doctor/{docId}/patient/{patId}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetAllVistsByDoctorPatient(int docId, int patId)
+    public IActionResult GetAllVisitsByDoctorPatient(int docId, int patId)
     {
         var result = _monoRecRepository.GetAllVisitsByDoctorPatient(docId, patId);
 

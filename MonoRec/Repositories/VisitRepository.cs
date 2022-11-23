@@ -31,8 +31,13 @@ namespace MonoRec.Repositories
             return visit;
         }
 
-        public Visit CreateNewVisit(int patId, int docId)
+        public Visit? CreateNewVisit(int patId, int docId)
         {
+            var patient = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
+            var doctor = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
+
+            if (doctor == null || patient == null) return null;
+
             var newVisit = new Visit(patId, docId);
             _db.Visits.Add(newVisit);
             _db.SaveChanges();
@@ -69,8 +74,8 @@ namespace MonoRec.Repositories
 
         public IEnumerable<Visit>? GetAllVisitsByDoctorPatient(int docId, int patId)
         {
-            var doctor = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
             var patient = _db.Patients.FirstOrDefault(patient => patient.PatientId == patId);
+            var doctor = _db.Doctors.FirstOrDefault(doctor => doctor.DoctorId == docId);
 
             if (doctor == null || patient == null) return null;
 
