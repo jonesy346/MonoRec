@@ -10,11 +10,12 @@ using MonoRec.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var identityConnectionString = builder.Configuration.GetConnectionString("IdentityConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(identityConnectionString));
 builder.Services.AddDbContext<MonoRecDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(defaultConnectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
