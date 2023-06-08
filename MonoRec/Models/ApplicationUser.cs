@@ -7,3 +7,5 @@ public class ApplicationUser : IdentityUser
 }
 
 
+//test@test.com
+//Welcome123!
