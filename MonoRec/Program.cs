@@ -6,6 +6,7 @@ using Microsoft.Net.Http.Headers;
 using MonoRec.Data;
 using MonoRec.Models;
 using MonoRec.Repositories;
+using MonoRec.Services;
 using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,7 +53,8 @@ builder.Services.AddIdentityServer()
         // Add role claim to JWT tokens
         options.IdentityResources["openid"].UserClaims.Add("role");
         options.ApiResources.Single().UserClaims.Add("role");
-    });
+    })
+    .AddProfileService<ProfileService>();
 
 builder.Services.AddAuthentication(options =>
     {
