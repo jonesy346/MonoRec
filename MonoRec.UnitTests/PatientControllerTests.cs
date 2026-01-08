@@ -1,11 +1,8 @@
-﻿using System;
-using MonoRec.Models;
+﻿using MonoRec.Models;
 using MonoRec.Repositories;
 using MonoRec.Controllers;
 using Moq;
 using Microsoft.AspNetCore.Mvc;
-using static System.Collections.Specialized.BitVector32;
-using MonoRec.Data;
 
 namespace MonoRec.UnitTests;
 
@@ -252,6 +249,46 @@ public class PatientControllerTests
 
         Assert.That(contentResult.StatusCode, Is.EqualTo(200));
         Assert.That(doctorObject.DoctorId, Is.EqualTo(docId));
+    }
+
+    // CreateNewPatient
+    [Test]
+    public void CreateNewPatient_CallsRepositoryFunction_VerifyCorrectFunctionIsCalled()
+    {
+        string patientName = "John Doe";
+        _mockRepo.Setup(x => x.CreateNewPatient(patientName)).Returns(new Patient { PatientId = 1, PatientName = patientName });
+
+        Patient result = _controller.CreateNewPatient(patientName);
+
+        _mockRepo.Verify(x => x.CreateNewPatient(patientName), Times.Once());
+    }
+
+    [Test]
+    public void CreateNewPatient_ValidName_ReturnsNewPatient()
+    {
+        string patientName = "John Doe";
+        var expectedPatient = new Patient { PatientId = 1, PatientName = patientName };
+        _mockRepo.Setup(x => x.CreateNewPatient(patientName)).Returns(expectedPatient);
+
+        Patient result = _controller.CreateNewPatient(patientName);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.PatientName, Is.EqualTo(patientName));
+        Assert.That(result.PatientId, Is.EqualTo(1));
+    }
+
+    [Test]
+    [TestCase("")]
+    [TestCase("Jane Smith")]
+    [TestCase("Bob Johnson")]
+    public void CreateNewPatient_DifferentNames_ReturnsCorrectPatient(string name)
+    {
+        var expectedPatient = new Patient { PatientId = 1, PatientName = name };
+        _mockRepo.Setup(x => x.CreateNewPatient(name)).Returns(expectedPatient);
+
+        Patient result = _controller.CreateNewPatient(name);
+
+        Assert.That(result.PatientName, Is.EqualTo(name));
     }
 
 }
