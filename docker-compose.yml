@@ -1,8 +1,0 @@
-version: '3.4'
-
-services:
-  monorec:
-    image: ${DOCKER_REGISTRY-}monorec
-    build:
-      context: .
-      dockerfile: MonoRec/Dockerfile

@@ -27,7 +27,7 @@ function Doctors(props) {
             <tr key={key}>
                 <td>{val.doctorId}</td>
                 <td>{val.doctorName}</td>
-                <td></td>
+                <td><button className="btn btn-primary" onClick={incrementDoctorId}>Edit</button></td>
             </tr>
         );
     });
@@ -36,11 +36,11 @@ function Doctors(props) {
         <div className="Doctors">
             <h1>Doctors</h1>
 
-            <p>This is a simple example of a React component.</p>
+            {/*<p>This is a simple example of a React component.</p>*/}
 
-            <p aria-live="polite">Current doctor: <strong>{DoctorId}</strong></p>
+            {/*<p aria-live="polite">Current doctor: <strong>{DoctorId}</strong></p>*/}
 
-            <button className="btn btn-primary" onClick={incrementDoctorId}>Increment</button>
+            {/*<button className="btn btn-primary" onClick={incrementDoctorId}>Increment</button>*/}
 
             <table>
                 <thead>

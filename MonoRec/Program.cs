@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
@@ -12,13 +12,30 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var identityConnectionString = builder.Configuration.GetConnectionString("IdentityConnection");
+
+// Using SQLite for local development
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(identityConnectionString));
+    options.UseSqlite(identityConnectionString));
 builder.Services.AddDbContext<MonoRecDbContext>(options =>
-    options.UseSqlServer(defaultConnectionString));
+    options.UseSqlite(defaultConnectionString));
+
+// AWS SQL Server configuration (commented out for local development)
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//    options.UseSqlServer(identityConnectionString));
+//builder.Services.AddDbContext<MonoRecDbContext>(options =>
+//    options.UseSqlServer(defaultConnectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 1;
+    })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddIdentityServer()
@@ -35,6 +52,11 @@ builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IVisitRepository, VisitRepository>();
 
+//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+//    .AddRoles<IdentityRole>()
+//    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -46,9 +68,8 @@ else
 {
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection(); // Only use HTTPS in production
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -100,6 +121,9 @@ app.UseEndpoints(endpoints =>
 //});
 
 app.MapFallbackToFile("index.html"); ;
+
+// Seed the database
+await DbInitializer.Initialize(app.Services);
 
 app.Run();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
 using MonoRec.Repositories;
@@ -18,6 +19,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Doctor")]
     public IEnumerable<Patient> GetAllPatients()
     {
         var result = _monoRecRepository.GetAllPatients();
@@ -48,6 +50,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{patId}/doctor")]
+    [Authorize(Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Doctor>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllDoctorsByPatient(int patId)

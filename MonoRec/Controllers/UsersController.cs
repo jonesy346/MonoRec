@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
-using MonoRec.Repositories;
 
 namespace MonoRec.Controllers;
 
-// upon application start, this controller is called once so that the guest role and user is 
+// upon application start, this controller is called once so that the guest role and user is established
 
 [ApiController]
 [Route("[controller]")]
