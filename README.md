@@ -27,13 +27,15 @@ MonoRec uses a dual authentication system:
 
 2. **JWT Token Authentication** (IdentityServer4)
    - Used by the React SPA for API calls
-   - Tokens contain user claims including roles
+   - Tokens contain user claims including roles, name, and email
+   - Custom `ProfileService` enriches JWT tokens with user data from the database
    - Managed by `authService` in React components
 
 This hybrid approach allows:
 - Traditional login/register forms via Razor Pages
 - Modern SPA authentication via JWT tokens
 - Seamless integration between server-rendered auth pages and the React frontend
+- Custom user properties (Name) included in JWT tokens via ProfileService
 
 ## Quickstart
 
