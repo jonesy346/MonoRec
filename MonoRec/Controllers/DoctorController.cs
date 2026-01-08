@@ -21,6 +21,7 @@ public class DoctorController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Patient")]
     public IEnumerable<Doctor> GetAllDoctors()
     {
         return _monoRecRepository.GetAllDoctors();
