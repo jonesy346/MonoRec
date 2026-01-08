@@ -85,4 +85,46 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Client-side validation for EmailDomain attribute
+        $.validator.addMethod('emaildomain', function (value, element, params) {
+            if (!value) {
+                return true; // Let the Required validator handle empty values
+            }
+
+            // Check if email contains @@
+            if (!value.includes('@@')) {
+                return false;
+            }
+
+            // Split by @@ and check structure
+            var parts = value.split('@@');
+            if (parts.length !== 2) {
+                return false;
+            }
+
+            // Check if domain part exists
+            if (!parts[1] || parts[1].trim() === '') {
+                return false;
+            }
+
+            // Check if domain has a dot
+            if (!parts[1].includes('.')) {
+                return false;
+            }
+
+            // Check if there's text after the last dot
+            var lastDotIndex = parts[1].lastIndexOf('.');
+            if (lastDotIndex === parts[1].length - 1 || lastDotIndex === 0) {
+                return false;
+            }
+
+            return true;
+        });
+
+        $.validator.unobtrusive.adapters.add('emaildomain', function (options) {
+            options.rules['emaildomain'] = true;
+            options.messages['emaildomain'] = options.message;
+        });
+    </script>
 }
