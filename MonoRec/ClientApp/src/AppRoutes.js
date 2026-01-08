@@ -5,6 +5,7 @@ import Visits from "./components/Visits";
 import { Counter } from "./components/Counter";
 import { FetchData } from "./components/FetchData";
 import Home from "./components/Home";
+import { AuthHealthCheck } from "./components/AuthHealthCheck";
 
 const AppRoutes = [
   {
@@ -32,7 +33,11 @@ const AppRoutes = [
     requireAuth: true,
     element: <FetchData />
   },
-   
+  {
+    path: '/auth-health-check',
+    element: <AuthHealthCheck />
+  },
+
   ...ApiAuthorzationRoutes
 ];
 
