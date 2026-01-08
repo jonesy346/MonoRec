@@ -6,6 +6,7 @@ using Microsoft.Net.Http.Headers;
 using MonoRec.Data;
 using MonoRec.Models;
 using MonoRec.Repositories;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,10 +39,26 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddIdentityServer()
-    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+// Configure cookie settings for localhost development
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies over HTTP for localhost
+});
 
-builder.Services.AddAuthentication()
+builder.Services.AddIdentityServer()
+    .AddApiAuthorization<ApplicationUser, ApplicationDbContext>(options =>
+    {
+        // Add role claim to JWT tokens
+        options.IdentityResources["openid"].UserClaims.Add("role");
+        options.ApiResources.Single().UserClaims.Add("role");
+    });
+
+builder.Services.AddAuthentication(options =>
+    {
+        // Set cookie as the default scheme for challenges (redirects to login)
+        options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+    })
     .AddIdentityServerJwt();
 
 builder.Services.AddControllersWithViews();
@@ -51,11 +68,6 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IVisitRepository, VisitRepository>();
-
-//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-//    .AddRoles<IdentityRole>()
-//    .AddEntityFrameworkStores<ApplicationDbContext>();
-
 
 var app = builder.Build();
 
@@ -70,6 +82,7 @@ else
     app.UseHsts();
     app.UseHttpsRedirection(); // Only use HTTPS in production
 }
+
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -77,53 +90,15 @@ app.UseAuthentication();
 app.UseIdentityServer();
 app.UseAuthorization();
 
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller}/{action=Index}/{id?}");
+// Map API controllers and Razor pages first
 app.MapControllers();
 app.MapRazorPages();
 
-//app.UseMvc();
-
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
-
-
-//app.MapWhen(x => x.Request.Path.Value.StartsWith("/api"), builder =>
-//{
-//    app.UseMvc();
-//});
-
-//app.MapWhen(x => !x.Request.Path.Value.StartsWith("/api"), builder =>
-//{
-//    app.UseSpa(spa =>
-//    {
-//        spa.Options.SourcePath = "ClientApp";
-
-//        if (env.IsDevelopment())
-//        {
-//            spa.UseReactDevelopmentServer(npmScript: "start");
-//        }
-//    });
-//});
-
-
-//app.MapWhen(x => !x.Request.Path.Value.StartsWith("/api"), builder =>
-//{
-//    app.Run(async (context) =>
-//    {
-//        context.Response.ContentType = "text/html";
-//        context.Response.Headers[HeaderNames.CacheControl] = "no-store, no-cache, must-revalidate";
-//        await context.Response.SendFileAsync(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
-//    });
-//});
-
-app.MapFallbackToFile("index.html"); ;
+// SPA fallback - MUST be last
+// This only catches routes that didn't match any controller or Razor page above
+app.MapFallbackToFile("index.html");
 
 // Seed the database
 await DbInitializer.Initialize(app.Services);
 
 app.Run();
-
