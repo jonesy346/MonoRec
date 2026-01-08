@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
@@ -26,6 +27,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("{visitId}")]
+    [Authorize(Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetVisit(int visitId)
@@ -38,6 +40,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpPost("{patId}/{docId}")]
+    [Authorize(Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult CreateNewVisit(int patId, int docId)
@@ -50,6 +53,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("patient/{patId}")]
+    [Authorize(Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllVisitsByPatient(int patId)
@@ -86,9 +90,8 @@ public class VisitController : ControllerBase
         return Ok(result);
     }
 
-    // Only doctors should be able to delete a visit. Implement authorization later
-
     [HttpDelete("{visitId}")]
+    [Authorize(Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult DeleteVisit(int visitId)
