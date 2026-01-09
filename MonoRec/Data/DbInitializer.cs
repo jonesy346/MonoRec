@@ -172,6 +172,7 @@ public static class DbInitializer
         {
             UserName = email, // Use email as username since fullName may contain spaces
             Email = email,
+            Name = fullName, // Store the full name in the Name property for display
             EmailConfirmed = true // Bypass email confirmation for seeded users
         };
 
