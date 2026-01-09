@@ -1,78 +1,171 @@
 import React, { useEffect, useState } from 'react';
-import authService from './api-authorization/AuthorizeService'
+import authService from './api-authorization/AuthorizeService';
+import { Table } from 'reactstrap';
+import './Home.css';
 
 function Home() {
-    const displayName = Home.name;
-
-    //delete everything below to keep original Home component
-    const [PatientId, setPatientId] = useState('');
-    const [Patients, setPatients] = useState([]);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [upcomingVisits, setUpcomingVisits] = useState([]);
+    const [patients, setPatients] = useState({});
+    const [doctors, setDoctors] = useState({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        populatePatients();
-    }, [Patients]);
+        const initialize = async () => {
+            const authenticated = await authService.isAuthenticated();
+            setIsAuthenticated(authenticated);
 
-    const populatePatients = async () => {
-        //const token = await authService.getAccessToken();
-        //const user = await authService.getUser();
-        const response = await fetch('patient', { method: 'GET' })
+            if (authenticated) {
+                const currentUser = await authService.getUser();
+                setUser(currentUser);
+                setUserId(currentUser.sub);
 
-    //        , {
-    //            headers: !token ? {} : { 'Authorization': `Bearer ${token}` }
-    //}
-        console.log(response);
-        const data = await response.json();
-        setPatients(data);
-        console.log("this ran");
-    }
+                // Extract role from user claims
+                const role = currentUser.role || 'User';
+                setUserRole(role);
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        //const token = await authService.getAccessToken();
-        const response = await fetch('patient',
-            {
-                method: 'POST',
-                body: JSON.stringify({ PatientId }),
-                headers: { 'Content-Type': 'application/json' }
+                await fetchUpcomingVisits();
             }
-        );
+            setLoading(false);
+        };
+
+        initialize();
+    }, []);
+
+    const fetchUpcomingVisits = async () => {
+        try {
+            const token = await authService.getAccessToken();
+            const response = await fetch('visit/upcoming', {
+                headers: !token ? {} : { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const visits = await response.json();
+                setUpcomingVisits(visits);
+
+                // Fetch patient and doctor details for each visit
+                await fetchPatientAndDoctorDetails(visits);
+            }
+        } catch (error) {
+            console.error('Error fetching upcoming visits:', error);
+        }
+    };
+
+    const fetchPatientAndDoctorDetails = async (visits) => {
+        const token = await authService.getAccessToken();
+        const patientIds = [...new Set(visits.map(v => v.patientId))];
+        const doctorIds = [...new Set(visits.map(v => v.doctorId))];
+
+        const patientMap = {};
+        const doctorMap = {};
+
+        for (const id of patientIds) {
+            try {
+                const response = await fetch(`patient/${id}`, {
+                    headers: !token ? {} : { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const patient = await response.json();
+                    patientMap[id] = patient;
+                }
+            } catch (error) {
+                console.error(`Error fetching patient ${id}:`, error);
+            }
+        }
+
+        for (const id of doctorIds) {
+            try {
+                const response = await fetch(`doctor/${id}`, {
+                    headers: !token ? {} : { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const doctor = await response.json();
+                    doctorMap[id] = doctor;
+                }
+            } catch (error) {
+                console.error(`Error fetching doctor ${id}:`, error);
+            }
+        }
+
+        setPatients(patientMap);
+        setDoctors(doctorMap);
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
 
     return (
-        <div>
-            <h1>Hello, world!</h1>
-            <p>Welcome to your new single-page application, built with:</p>
-            <ul>
-                <li><a href='https://get.asp.net/'>ASP.NET Core</a> and <a href='https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx'>C#</a> for cross-platform server-side code</li>
-                <li><a href='https://facebook.github.io/react/'>React</a> for client-side code</li>
-                <li><a href='http://getbootstrap.com/'>Bootstrap</a> for layout and styling</li>
-            </ul>
-            <p>To help you get started, we have also set up:</p>
-            <ul>
-                <li><strong>Client-side navigation</strong>. For example, click <em>Counter</em> then <em>Back</em> to return here.</li>
-                <li><strong>Development server integration</strong>. In development mode, the development server from <code>create-react-app</code> runs in the background automatically, so your client-side resources are dynamically built on demand and the page refreshes when you modify any file.</li>
-                <li><strong>Efficient production builds</strong>. In production mode, development-time features are disabled, and your <code>dotnet publish</code> configuration produces minified, efficiently bundled JavaScript files.</li>
-            </ul>
-            <p>The <code>ClientApp</code> subdirectory is a standard React application based on the <code>create-react-app</code> template. If you open a command prompt in that directory, you can run <code>npm</code> commands such as <code>npm test</code> or <code>npm install</code>.</p>
-        
+        <div className="home-container">
+            <h1>Welcome to MonoRec</h1>
+            <p className="subtitle">Medical Records Management System</p>
 
-            //delete everything below for original home component
-            <h1>Create Visit Entry</h1>
-            <div className="row">
-                <div className="col-mid-6">
-                    <form id="statsForm" onSubmit={handleSubmit}>
-                        <select>
-                            <option value="⬇️ Select a patient ⬇️"> -- Select a patient -- </option>
-                            {Patients.map((patient) => <option value={patient.patientId}>{patient.patientName} | {patient.patientId}</option>)}
-                        </select>
-                        <div className="form-group">
-                            <button type="submit" className="btn btn-success">Submit</button>
+            {isAuthenticated ? (
+                <div>
+                    <div className="user-info-card">
+                        <h3>Your Information</h3>
+                        <div className="info-row">
+                            <span className="info-label">Username:</span>
+                            <span className="info-value">{user?.name || 'N/A'}</span>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+                        <div className="info-row">
+                            <span className="info-label">User ID:</span>
+                            <span className="info-value">{userId || 'N/A'}</span>
+                        </div>
+                        <div className="info-row">
+                            <span className="info-label">Role:</span>
+                            <span className="info-value role-badge">{userRole || 'User'}</span>
+                        </div>
+                    </div>
 
+                    <div className="upcoming-visits-section">
+                        <h3>Upcoming Visits</h3>
+                        {upcomingVisits.length > 0 ? (
+                            <Table striped bordered hover responsive>
+                                <thead>
+                                    <tr>
+                                        <th>Visit ID</th>
+                                        <th>Date & Time</th>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {upcomingVisits.map((visit) => (
+                                        <tr key={visit.visitId}>
+                                            <td>{visit.visitId}</td>
+                                            <td>{formatDate(visit.visitDate)}</td>
+                                            <td>{patients[visit.patientId]?.patientName || `Patient #${visit.patientId}`}</td>
+                                            <td>{doctors[visit.doctorId]?.doctorName || `Doctor #${visit.doctorId}`}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        ) : (
+                            <p className="no-visits-message">No upcoming visits scheduled.</p>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="login-prompt">
+                    <p>Please log in to view your information and upcoming visits.</p>
+                </div>
+            )}
+        </div>
     );
 }
 
