@@ -170,7 +170,7 @@ public static class DbInitializer
 
         var user = new ApplicationUser
         {
-            UserName = fullName ?? email,
+            UserName = email, // Use email as username since fullName may contain spaces
             Email = email,
             EmailConfirmed = true // Bypass email confirmation for seeded users
         };
