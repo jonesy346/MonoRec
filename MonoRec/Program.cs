@@ -54,7 +54,8 @@ builder.Services.AddIdentityServer()
         options.IdentityResources["openid"].UserClaims.Add("role");
         options.ApiResources.Single().UserClaims.Add("role");
     })
-    .AddProfileService<ProfileService>();
+    .AddProfileService<ProfileService>()
+    .AddDeveloperSigningCredential(); // Add development signing credential
 
 builder.Services.AddAuthentication(options =>
     {
