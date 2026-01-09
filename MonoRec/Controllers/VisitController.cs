@@ -102,5 +102,13 @@ public class VisitController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("upcoming")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
+    public IActionResult GetUpcomingVisits()
+    {
+        var result = _monoRecRepository.GetUpcomingVisits();
+        return Ok(result);
+    }
 }
 

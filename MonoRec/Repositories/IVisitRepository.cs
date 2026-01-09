@@ -12,5 +12,6 @@ namespace MonoRec.Repositories
         IEnumerable<Visit>? GetAllVisitsByDoctor(int DoctorId);
         IEnumerable<Visit>? GetAllVisitsByDoctorPatient(int DoctorId, int PatientId);
         Visit? DeleteVisit(int VisitId);
+        IEnumerable<Visit> GetUpcomingVisits();
 	}
 }

@@ -98,5 +98,16 @@ namespace MonoRec.Repositories
             return visitToDelete;
         }
 
+        public IEnumerable<Visit> GetUpcomingVisits()
+        {
+            var today = DateTime.Today;
+            var upcomingVisits = _db.Visits
+                .Where(visit => visit.VisitDate >= today)
+                .OrderBy(visit => visit.VisitDate)
+                .ToList();
+
+            return upcomingVisits;
+        }
+
     }
 }
