@@ -86,16 +86,18 @@ This hybrid approach allows:
 ### API Endpoints
 
 #### Patient Endpoints
-- `GET /patient` - Get all patients *(Doctor only)*
+- `GET /patient` - Get all patients *(Doctor only)* or filtered patient with `?currentUserOnly=true` *(Authenticated users)*
+- `GET /patient/me` - Get current patient entity *(Patient only)*
 - `GET /patient/{id}` - Get patient by ID
 - `POST /patient/{name}` - Create new patient
-- `GET /patient/{patientId}/doctors` - Get doctors affiliated with patient *(Patient and Doctor)*
+- `GET /patient/{patientId}/doctor` - Get doctors affiliated with patient *(Patient and Doctor)*
 
 #### Doctor Endpoints
-- `GET /doctor` - Get all doctors *(Patient only)*
+- `GET /doctor` - Get all doctors *(Authenticated users)*
+- `GET /doctor/me` - Get current doctor entity *(Doctor only)*
 - `GET /doctor/{id}` - Get doctor by ID
 - `POST /doctor/{name}` - Create new doctor
-- `GET /doctor/{doctorId}/patients` - Get patients affiliated with doctor *(Doctor only)*
+- `GET /doctor/{doctorId}/patient` - Get patients affiliated with doctor *(Authenticated users)*
 
 #### Visit Endpoints
 - `GET /visit` - Get all visits
@@ -129,25 +131,44 @@ During registration:
 - The entity is linked to the Identity user via the `UserId` field
 - Role-based permissions are immediately active
 
-### Role-Based Permissions
+### Role-Based Permissions & Security
+
+MonoRec implements role-based authorization with secure data filtering to protect sensitive patient information.
 
 #### Doctor Role
 Doctors have elevated privileges:
 - ✅ View all patients (`GET /patient`)
-- ✅ View patients affiliated with them (`GET /doctor/{doctorId}/patients`)
+- ✅ View patients affiliated with them (`GET /doctor/{doctorId}/patient`)
+- ✅ View all doctors (`GET /doctor`)
 - ✅ Create new visits (`POST /visit`)
 - ✅ Delete visits (`DELETE /visit/{id}`)
 - ✅ View visit details (`GET /visit/{id}`)
-- ❌ Cannot view list of all doctors
 
 #### Patient Role
-Patients have restricted access:
-- ✅ View all doctors (`GET /doctor`) - to find and select doctors
-- ✅ View doctors affiliated with them (`GET /patient/{patientId}/doctors`)
+Patients have restricted access with secure filtering:
+- ✅ View all doctors (`GET /doctor`) - to discover affiliated doctors
+- ✅ View only their own patient record (`GET /patient?currentUserOnly=true`)
+- ✅ View doctors affiliated with them (`GET /patient/{patientId}/doctor`)
 - ✅ View their own visit details (`GET /visit/{id}`)
-- ❌ Cannot view other patients
+- ❌ Cannot view other patients' data
 - ❌ Cannot create or delete visits
-- ❌ Cannot view all patients
+- ❌ Cannot access full patient list
+
+#### Security Implementation
+
+The application uses backend filtering to protect sensitive data:
+
+1. **Query Parameter Filtering** - The `GET /patient?currentUserOnly=true` endpoint filters results server-side based on the authenticated user's ID. This prevents patients from accessing other patients' data while still allowing them to retrieve their own patient entity.
+
+2. **"sub" Claim** - User identification uses the `sub` claim from IdentityServer, which is consistent across both cookie-based (Identity.Application) and JWT-based (IdentityServerJwt) authentication schemes.
+
+3. **Role-Based Access Control** - When `currentUserOnly=false` (or omitted), the `GET /patient` endpoint requires the Doctor role. Non-doctors receive an empty list.
+
+4. **Dual Authentication** - All protected endpoints accept both authentication schemes:
+   - `Identity.Application` - Cookie-based authentication
+   - `IdentityServerJwt` - JWT token authentication
+
+   This ensures seamless authentication whether accessing from server-rendered pages or the React SPA.
 
 ### Auth Health Check
 Navigate to `/auth-health-check` to view:
@@ -159,15 +180,45 @@ Navigate to `/auth-health-check` to view:
 
 This is useful for verifying your login status and understanding what permissions you have.
 
-## Seeded Accounts
+## Seeded Accounts & Test Data
 
-On first run, the following test accounts are created:
+On first run, the database is seeded with test data:
 
+### User Accounts
 - **Doctor**: `doctor@example.com` / `Password123!` (Doctor role)
 - **Patient**: `patient@example.com` / `Password123!` (Patient role)
 - **Test User**: `test@test.com` / `Welcome123!` (No role)
 
 Corresponding Doctor and Patient entities are automatically created and linked via `UserId`.
+
+### Seeded Entities
+The application also seeds:
+- **10 Doctors** (Dr. Smith, Dr. Johnson, Dr. Williams, etc.)
+- **10 Patients** (Alice, Bob, Charlie, Diana, etc.)
+- **Random Doctor-Patient Relationships** - Each seeded entity is randomly linked with 2-4 entities of the opposite type
+
+### Auto-Linking on First Login
+When a newly registered user logs in for the first time:
+1. The system detects they have no affiliated doctors/patients
+2. Automatically links them with 3 random seeded entities
+3. For doctors: Gets 3 random seeded patients
+4. For patients: Gets 3 random seeded doctors
+
+This ensures every new user has data to explore immediately after registration.
+
+### Testing with Seeded Accounts
+To test the application with multiple pre-configured users:
+
+1. Register new accounts:
+   - `doc1@gmail.com` / `Password` (Doctor role)
+   - `pat1@gmail.com` / `Password` (Patient role)
+
+2. On first login, these accounts will be automatically linked to seeded entities
+
+3. Navigate to:
+   - **Doctors as Patient**: See your 3 affiliated doctors
+   - **Patients as Doctor**: See your 3 affiliated patients
+   - **Home Page**: View upcoming visits for affiliated relationships
 
 ## Development
 
