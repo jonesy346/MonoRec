@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Patients API</title>
+</head>
+<body>
+    <h1>Test Patients API</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+
+            try {
+                // Test 1: Get all doctors
+                output.textContent += '\n=== Testing GET /doctor ===\n';
+                const doctorResponse = await fetch('http://localhost:5076/doctor', {
+                    credentials: 'include'
+                });
+                output.textContent += `Status: ${doctorResponse.status}\n`;
+
+                if (doctorResponse.ok) {
+                    const doctors = await doctorResponse.json();
+                    output.textContent += `Doctors found: ${doctors.length}\n`;
+                    output.textContent += JSON.stringify(doctors, null, 2) + '\n';
+
+                    // Find doctor with userId: f486511d-2b4c-4c32-a6d7-4ff8af2f4409
+                    const testUserId = 'f486511d-2b4c-4c32-a6d7-4ff8af2f4409';
+                    const currentDoctor = doctors.find(d => d.userId === testUserId);
+
+                    if (currentDoctor) {
+                        output.textContent += `\nFound doctor: ${JSON.stringify(currentDoctor, null, 2)}\n`;
+
+                        // Test 2: Get patients for this doctor
+                        output.textContent += `\n=== Testing GET /doctor/${currentDoctor.doctorId}/patient ===\n`;
+                        const patientResponse = await fetch(`http://localhost:5076/doctor/${currentDoctor.doctorId}/patient`, {
+                            credentials: 'include'
+                        });
+                        output.textContent += `Status: ${patientResponse.status}\n`;
+
+                        if (patientResponse.ok) {
+                            const patients = await patientResponse.json();
+                            output.textContent += `Patients found: ${patients.length}\n`;
+                            output.textContent += JSON.stringify(patients, null, 2) + '\n';
+                        } else {
+                            output.textContent += `Error: ${await patientResponse.text()}\n`;
+                        }
+                    } else {
+                        output.textContent += `\nDoctor with userId ${testUserId} not found\n`;
+                    }
+                } else {
+                    output.textContent += `Error: ${await doctorResponse.text()}\n`;
+                }
+            } catch (error) {
+                output.textContent += `\nException: ${error.message}\n${error.stack}\n`;
+            }
+        }
+    </script>
+</body>
+</html>

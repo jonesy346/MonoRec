@@ -29,19 +29,53 @@ public static class DbInitializer
 
     private static async Task SeedMonoRecData(MonoRecDbContext context, UserManager<ApplicationUser> userManager)
     {
+        // Populate DoctorEmail for existing doctors that have a UserId but no email
+        var doctorsWithoutEmail = await context.Doctors
+            .Where(d => d.UserId != null && d.DoctorEmail == null)
+            .ToListAsync();
+
+        if (doctorsWithoutEmail.Any())
+        {
+            foreach (var doctor in doctorsWithoutEmail)
+            {
+                var user = await userManager.FindByIdAsync(doctor.UserId);
+                if (user != null)
+                {
+                    doctor.DoctorEmail = user.Email;
+                }
+            }
+            await context.SaveChangesAsync();
+            Console.WriteLine($"Populated emails for {doctorsWithoutEmail.Count} existing doctors.");
+        }
+
         // Check if data already exists
         if (await context.Doctors.AnyAsync())
         {
             return; // Database has been seeded
         }
 
-        // Seed 10 sample doctors (not linked to user accounts)
-        var doctorNames = new[] { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez" };
+        // Seed 10 sample doctors (not linked to user accounts, but with email addresses for display)
+        var doctorData = new[]
+        {
+            ("Smith", "smith@monorec.com"),
+            ("Johnson", "johnson@monorec.com"),
+            ("Williams", "williams@monorec.com"),
+            ("Brown", "brown@monorec.com"),
+            ("Jones", "jones@monorec.com"),
+            ("Garcia", "garcia@monorec.com"),
+            ("Miller", "miller@monorec.com"),
+            ("Davis", "davis@monorec.com"),
+            ("Rodriguez", "rodriguez@monorec.com"),
+            ("Martinez", "martinez@monorec.com")
+        };
         var doctors = new List<Doctor>();
 
-        foreach (var name in doctorNames)
+        foreach (var (name, email) in doctorData)
         {
-            var doctor = new Doctor($"Dr. {name}");
+            var doctor = new Doctor($"Dr. {name}")
+            {
+                DoctorEmail = email
+            };
             doctors.Add(doctor);
         }
         await context.Doctors.AddRangeAsync(doctors);
@@ -180,11 +214,21 @@ public static class DbInitializer
                 // Create a Doctor entity for this user
                 var doctorEntity = new Doctor(user.Email?.Split('@')[0] ?? "Doctor")
                 {
-                    UserId = userId
+                    UserId = userId,
+                    DoctorEmail = user.Email
                 };
                 await context.Doctors.AddAsync(doctorEntity);
                 await context.SaveChangesAsync();
                 existingDoctor = doctorEntity;
+            }
+            else
+            {
+                // Update email if it's missing
+                if (string.IsNullOrEmpty(existingDoctor.DoctorEmail))
+                {
+                    existingDoctor.DoctorEmail = user.Email;
+                    await context.SaveChangesAsync();
+                }
             }
 
             // Check if this doctor already has patient associations
@@ -194,18 +238,28 @@ public static class DbInitializer
 
             if (existingAssociations == 0)
             {
-                // Randomly assign 3 patients to this doctor
-                var allPatients = await context.Patients.ToListAsync();
-                var random = new Random();
-                var selectedPatients = allPatients.OrderBy(x => random.Next()).Take(3).ToList();
+                // Link to 3 random seeded patients (those without UserId)
+                var seededPatients = await context.Patients
+                    .Where(p => p.UserId == null)
+                    .ToListAsync();
 
-                foreach (var patient in selectedPatients)
+                if (seededPatients.Any())
                 {
-                    var doctorPatient = new DoctorPatient(existingDoctor.DoctorId, patient.PatientId);
-                    await context.DoctorsPatients.AddAsync(doctorPatient);
+                    var random = new Random();
+                    var selectedPatients = seededPatients.OrderBy(x => random.Next()).Take(3).ToList();
+
+                    foreach (var patient in selectedPatients)
+                    {
+                        var doctorPatient = new DoctorPatient(existingDoctor.DoctorId, patient.PatientId);
+                        await context.DoctorsPatients.AddAsync(doctorPatient);
+                    }
+                    await context.SaveChangesAsync();
+                    Console.WriteLine($"Doctor {user.Email} linked to {selectedPatients.Count} seeded patients.");
                 }
-                await context.SaveChangesAsync();
-                Console.WriteLine($"Doctor {user.Email} linked to {selectedPatients.Count} patients.");
+                else
+                {
+                    Console.WriteLine($"Doctor {user.Email} entity created successfully (no seeded patients available).");
+                }
             }
         }
         else if (userRole == "Patient")

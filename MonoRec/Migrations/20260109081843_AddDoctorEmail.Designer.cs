@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MonoRec.Data;
 
@@ -10,9 +11,10 @@ using MonoRec.Data;
 namespace MonoRec.Migrations
 {
     [DbContext(typeof(MonoRecDbContext))]
-    partial class MonoRecDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109081843_AddDoctorEmail")]
+    partial class AddDoctorEmail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
