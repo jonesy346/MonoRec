@@ -20,7 +20,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt")]
     public IEnumerable<Patient> GetAllPatients()
     {
         var result = _monoRecRepository.GetAllPatients();
