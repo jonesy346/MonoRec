@@ -62,6 +62,23 @@ builder.Services.ConfigureApplicationCookie(options =>
             }
         }
     };
+
+    // For API requests, return 401 instead of redirecting to login page
+    options.Events.OnRedirectToLogin = context =>
+    {
+        // Check if this is an API request (not requesting HTML)
+        if (context.Request.Path.StartsWithSegments("/patient") ||
+            context.Request.Path.StartsWithSegments("/doctor") ||
+            context.Request.Path.StartsWithSegments("/visit"))
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        }
+
+        // For non-API requests, do the normal redirect
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddIdentityServer()
@@ -74,11 +91,8 @@ builder.Services.AddIdentityServer()
     .AddProfileService<ProfileService>()
     .AddDeveloperSigningCredential(); // Add development signing credential
 
-builder.Services.AddAuthentication(options =>
-    {
-        // Set cookie as the default scheme for challenges (redirects to login)
-        options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-    })
+// Don't set default schemes - let controllers specify which schemes they accept
+builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
 
 builder.Services.AddControllersWithViews();

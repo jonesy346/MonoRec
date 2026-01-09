@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MonoRec.Models;
@@ -19,11 +20,26 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
     public IEnumerable<Patient> GetAllPatients()
     {
         var result = _monoRecRepository.GetAllPatients();
         return result;
+    }
+
+    [HttpGet("me")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Patient")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Patient))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetCurrentPatient()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+
+        var patient = _monoRecRepository.GetAllPatients().FirstOrDefault(p => p.UserId == userId);
+        if (patient == null) return NotFound();
+
+        return Ok(patient);
     }
 
     [HttpGet("{patId}")]
@@ -50,7 +66,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{patId}/doctor")]
-    [Authorize(Roles = "Patient,Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Doctor>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllDoctorsByPatient(int patId)

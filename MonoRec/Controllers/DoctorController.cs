@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +21,33 @@ public class DoctorController : ControllerBase
         _monoRecRepository = monoRecRepository;
     }
 
+    [HttpGet("me")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Doctor))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetCurrentDoctor()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+
+        var doctor = _monoRecRepository.GetAllDoctors().FirstOrDefault(d => d.UserId == userId);
+        if (doctor == null) return NotFound();
+
+        return Ok(doctor);
+    }
+
     [HttpGet]
-    [Authorize(Roles = "Patient")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt")]
     public IEnumerable<Doctor> GetAllDoctors()
     {
+        // Log user claims for debugging
+        var userId = User.FindFirst("sub")?.Value;
+        var userName = User.Identity?.Name;
+        var roles = User.FindAll("role").Select(c => c.Value);
+        Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
+        Console.WriteLine($"User ID: {userId}, Name: {userName}");
+        Console.WriteLine($"Roles: {string.Join(", ", roles)}");
+
         return _monoRecRepository.GetAllDoctors();
     }
 
@@ -47,7 +71,7 @@ public class DoctorController : ControllerBase
     }
 
     [HttpGet("{docId}/patient")]
-    [Authorize(Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Patient>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllPatientsByDoctor(int docId)

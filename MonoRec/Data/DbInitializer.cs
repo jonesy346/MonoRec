@@ -126,7 +126,7 @@ public static class DbInitializer
         await CreateUserWithRole(userManager, "test@test.com", "Welcome123!", null, "Test User");
     }
 
-    private static async Task CreateUserWithRole(UserManager<ApplicationUser> userManager, string email, string password, string roleName, string fullName = null)
+    private static async Task CreateUserWithRole(UserManager<ApplicationUser> userManager, string email, string password, string? roleName, string? fullName = null)
     {
         var existingUser = await userManager.FindByEmailAsync(email);
         if (existingUser != null)
