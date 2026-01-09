@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("{visitId}")]
-    [Authorize(Roles = "Patient,Doctor")]
+    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetVisit(int visitId)
@@ -40,7 +41,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpPost("{patId}/{docId}")]
-    [Authorize(Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult CreateNewVisit(int patId, int docId)
@@ -53,7 +54,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("patient/{patId}")]
-    [Authorize(Roles = "Patient,Doctor")]
+    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllVisitsByPatient(int patId)
@@ -91,7 +92,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpDelete("{visitId}")]
-    [Authorize(Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult DeleteVisit(int visitId)

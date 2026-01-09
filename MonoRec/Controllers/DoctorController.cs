@@ -36,18 +36,18 @@ public class DoctorController : ControllerBase
         return Ok(doctor);
     }
 
+    /// <summary>
+    /// Gets all doctors. Requires authentication but no specific role.
+    ///
+    /// Security note: This endpoint is accessible to all authenticated users (both patients and doctors).
+    /// Patients use this to fetch the list of doctors, filter by their userId to find their doctor entity,
+    /// and then retrieve their associated doctors via the patient/{patId}/doctor endpoint.
+    /// This design allows patients to find their own doctor without exposing sensitive patient data.
+    /// </summary>
     [HttpGet]
     [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt")]
     public IEnumerable<Doctor> GetAllDoctors()
     {
-        // Log user claims for debugging
-        var userId = User.FindFirst("sub")?.Value;
-        var userName = User.Identity?.Name;
-        var roles = User.FindAll("role").Select(c => c.Value);
-        Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
-        Console.WriteLine($"User ID: {userId}, Name: {userName}");
-        Console.WriteLine($"Roles: {string.Join(", ", roles)}");
-
         return _monoRecRepository.GetAllDoctors();
     }
 

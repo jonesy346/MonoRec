@@ -21,7 +21,7 @@ function Doctors(props) {
                 const role = currentUser.role || 'User';
                 setUserRole(role);
 
-                await populateDoctors(currentUser, role);
+                await populateDoctors(role);
             }
             setLoading(false);
         };
@@ -33,53 +33,42 @@ function Doctors(props) {
         setDoctorId(DoctorId + 1);
     }
 
-    const populateDoctors = async (currentUser, role) => {
-        console.log("Populate Doctors function loaded");
-        console.log("Current user:", currentUser);
-        console.log("User role:", role);
+    // Security implementation: Patients fetch their own patient record using currentUserOnly=true query parameter,
+    // which ensures the backend only returns their own patient entity. This prevents exposure of other patients' data
+    // while still allowing patients to find their patientId and retrieve their associated doctors.
+    const populateDoctors = async (role) => {
         try {
             const token = await authService.getAccessToken();
-            console.log("Access token:", token ? "Token exists (length: " + token.length + ")" : "No token");
             let response;
 
             if (role === 'Patient') {
-                // Fetch patient entity to get patientId
-                console.log("Fetching all patients...");
+                // Fetch current patient entity using backend filtering (currentUserOnly=true)
                 const headers = !token ? {} : { 'Authorization': `Bearer ${token}` };
-                console.log("Request headers:", headers);
-                const patientResponse = await fetch('patient', {
+                const patientResponse = await fetch('patient?currentUserOnly=true', {
                     headers: headers,
                     credentials: 'include'
                 });
 
                 if (!patientResponse.ok) {
-                    console.error("Failed to fetch patients:", patientResponse.status, patientResponse.statusText);
+                    console.error("Failed to fetch current patient:", patientResponse.status, patientResponse.statusText);
                     setDoctors([]);
                     return;
                 }
-
-                const patientsText = await patientResponse.text();
-                console.log("Raw patients response:", patientsText);
 
                 let patients;
                 try {
-                    patients = JSON.parse(patientsText);
-                    console.log("All patients:", patients);
-                    console.log("Looking for userId:", currentUser.sub);
+                    patients = await patientResponse.json();
                 } catch (e) {
                     console.error("Failed to parse patients JSON:", e);
-                    console.error("Response text was:", patientsText);
                     setDoctors([]);
                     return;
                 }
 
-                // Find the patient entity linked to this user
-                const currentPatient = patients.find(p => p.userId === currentUser.sub);
-                console.log("Found patient:", currentPatient);
+                // Should only have one patient (the current user)
+                const currentPatient = patients[0];
 
                 if (currentPatient) {
                     // Fetch doctors for this patient
-                    console.log(`Fetching doctors for patient ${currentPatient.patientId}...`);
                     response = await fetch(`patient/${currentPatient.patientId}/doctor`, {
                         headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
                         credentials: 'include'
@@ -87,13 +76,10 @@ function Doctors(props) {
 
                     if (!response.ok) {
                         console.error("Failed to fetch doctors:", response.status, response.statusText);
-                        const errorText = await response.text();
-                        console.error("Error response:", errorText);
                         setDoctors([]);
                         return;
                     }
                 } else {
-                    console.log("No patient entity found for user");
                     setDoctors([]);
                     return;
                 }
@@ -111,16 +97,11 @@ function Doctors(props) {
             }
 
             if (response && response.ok) {
-                const responseText = await response.text();
-                console.log("Raw doctors response:", responseText);
-
                 try {
-                    const data = JSON.parse(responseText);
-                    console.log("Parsed doctors data:", data);
+                    const data = await response.json();
                     setDoctors(data);
                 } catch (e) {
                     console.error("Failed to parse doctors JSON:", e);
-                    console.error("Response text was:", responseText);
                     setDoctors([]);
                 }
             }

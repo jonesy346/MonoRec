@@ -19,11 +19,49 @@ public class PatientController : ControllerBase
         _monoRecRepository = monoRecRepository;
     }
 
+    /// <summary>
+    /// Gets all patients with role-based filtering and optional current-user filtering.
+    ///
+    /// Security implementation:
+    /// - When currentUserOnly=true: Returns only the patient record associated with the authenticated user's userId.
+    ///   This allows patients to retrieve their own patientId without exposing other patients' data.
+    /// - When currentUserOnly=false (or omitted): Requires Doctor role to access full patient list.
+    ///   Non-doctors receive an empty list, protecting patient data from unauthorized access.
+    ///
+    /// Uses the "sub" claim from IdentityServer for user identification, which is consistent across
+    /// cookie-based (Identity.Application) and JWT-based (IdentityServerJwt) authentication.
+    /// </summary>
+    /// <param name="currentUserOnly">When true, filters to only the current user's patient record</param>
+    /// <returns>Filtered collection of patients based on authentication and authorization</returns>
     [HttpGet]
     [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt")]
-    public IEnumerable<Patient> GetAllPatients()
+    public IEnumerable<Patient> GetAllPatients([FromQuery] bool currentUserOnly = false)
     {
         var result = _monoRecRepository.GetAllPatients();
+
+        // If currentUserOnly is requested, filter to just the current user's patient
+        if (currentUserOnly)
+        {
+            var userId = User.FindFirst("sub")?.Value;
+
+            if (userId != null)
+            {
+                result = result.Where(p => p.UserId == userId);
+            }
+            else
+            {
+                result = Enumerable.Empty<Patient>();
+            }
+
+            return result;
+        }
+
+        // Otherwise, require Doctor role for full patient list
+        if (!User.IsInRole("Doctor"))
+        {
+            return Enumerable.Empty<Patient>();
+        }
+
         return result;
     }
 
