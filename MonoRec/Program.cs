@@ -45,6 +45,23 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies over HTTP for localhost
+
+    // Hook into the sign-in event to link users to doctors/patients
+    options.Events.OnSignedIn = async context =>
+    {
+        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.GetUserAsync(context.Principal);
+        if (user != null)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+            var userRole = roles.FirstOrDefault();
+
+            if (userRole == "Doctor" || userRole == "Patient")
+            {
+                await DbInitializer.LinkUserToDoctorsOrPatients(context.HttpContext.RequestServices, user.Id, userRole);
+            }
+        }
+    };
 });
 
 builder.Services.AddIdentityServer()
