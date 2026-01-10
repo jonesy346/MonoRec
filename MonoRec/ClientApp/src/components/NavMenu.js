@@ -8,11 +8,20 @@ import './NavMenu.css';
 export function NavMenu() {
   const [collapsed, setCollapsed] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const authenticated = await authService.isAuthenticated();
       setIsAuthenticated(authenticated);
+
+      if (authenticated) {
+        const user = await authService.getUser();
+        const role = user?.role || null;
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
     };
 
     checkAuth();
@@ -41,12 +50,16 @@ export function NavMenu() {
             </NavItem>
             {isAuthenticated && (
               <>
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/patienturl">Patients</NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/doctorurl">Doctors</NavLink>
-                </NavItem>
+                {userRole !== 'Patient' && (
+                  <NavItem>
+                    <NavLink tag={Link} className="text-dark" to="/patienturl">Patients</NavLink>
+                  </NavItem>
+                )}
+                {userRole !== 'Doctor' && (
+                  <NavItem>
+                    <NavLink tag={Link} className="text-dark" to="/doctorurl">Doctors</NavLink>
+                  </NavItem>
+                )}
                 <NavItem>
                   <NavLink tag={Link} className="text-dark" to="/visiturl">Visits</NavLink>
                 </NavItem>
