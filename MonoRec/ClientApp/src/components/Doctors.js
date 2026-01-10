@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from './api-authorization/AuthorizeService'
 
-function Doctors(props) {
+function Doctors() {
 
-    const [DoctorId, setDoctorId] = useState(0);
+    const navigate = useNavigate();
     const [Doctors, setDoctors] = useState([]);
-    const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [patientId, setPatientId] = useState(null);
+    const [hiddenDoctorIds, setHiddenDoctorIds] = useState([]);
+
+    // Load hidden doctor IDs from localStorage on mount
+    useEffect(() => {
+        const stored = localStorage.getItem('hiddenDoctorIds');
+        if (stored) {
+            try {
+                setHiddenDoctorIds(JSON.parse(stored));
+            } catch (e) {
+                console.error('Failed to parse hidden doctor IDs from localStorage', e);
+                setHiddenDoctorIds([]);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const initialize = async () => {
@@ -17,7 +32,6 @@ function Doctors(props) {
 
             if (authenticated) {
                 const currentUser = await authService.getUser();
-                setUser(currentUser);
                 const role = currentUser.role || 'User';
                 setUserRole(role);
 
@@ -27,10 +41,28 @@ function Doctors(props) {
         };
 
         initialize();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hiddenDoctorIds]);
 
-    const incrementDoctorId = () => {
-        setDoctorId(DoctorId + 1);
+    const handleViewVisits = (doctorId) => {
+        // Navigate to visits page filtered by patient and doctor
+        navigate(`/visiturl?patientId=${patientId}&doctorId=${doctorId}`);
+    }
+
+    const handleRemoveDoctor = (doctorId) => {
+        // Frontend-only removal - filter out the doctor from the displayed list
+        // This does NOT delete the backend relationship or any visit history
+        if (window.confirm('Remove this doctor from your list? (Visit history will be preserved)')) {
+            // Add to hidden list
+            const newHiddenIds = [...hiddenDoctorIds, doctorId];
+            setHiddenDoctorIds(newHiddenIds);
+
+            // Save to localStorage
+            localStorage.setItem('hiddenDoctorIds', JSON.stringify(newHiddenIds));
+
+            // Update displayed doctors
+            setDoctors(Doctors.filter(doc => doc.doctorId !== doctorId));
+        }
     }
 
     // Security implementation: Patients fetch their own patient record using currentUserOnly=true query parameter,
@@ -68,6 +100,9 @@ function Doctors(props) {
                 const currentPatient = patients[0];
 
                 if (currentPatient) {
+                    // Store patientId for later use
+                    setPatientId(currentPatient.patientId);
+
                     // Fetch doctors for this patient
                     response = await fetch(`patient/${currentPatient.patientId}/doctor`, {
                         headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
@@ -99,7 +134,9 @@ function Doctors(props) {
             if (response && response.ok) {
                 try {
                     const data = await response.json();
-                    setDoctors(data);
+                    // Filter out hidden doctors based on localStorage
+                    const visibleDoctors = data.filter(doc => !hiddenDoctorIds.includes(doc.doctorId));
+                    setDoctors(visibleDoctors);
                 } catch (e) {
                     console.error("Failed to parse doctors JSON:", e);
                     setDoctors([]);
@@ -115,7 +152,22 @@ function Doctors(props) {
             <tr key={key}>
                 <td>{val.doctorName}</td>
                 <td>{val.doctorEmail}</td>
-                <td><button className="btn btn-primary" onClick={incrementDoctorId}>Edit</button></td>
+                <td>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleViewVisits(val.doctorId)}
+                    >
+                        View Visits
+                    </button>
+                </td>
+                <td>
+                    <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleRemoveDoctor(val.doctorId)}
+                    >
+                        Remove
+                    </button>
+                </td>
             </tr>
         );
     });
@@ -146,12 +198,13 @@ function Doctors(props) {
             )}
 
             {Doctors.length > 0 && (
-                <table>
+                <table className="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Button</th>
+                            <th>Visits</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
