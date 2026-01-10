@@ -241,20 +241,34 @@ public static class DbInitializer
 
         if (userRole == "Doctor")
         {
-            // Check if this doctor already has a Doctor entity
+            // First check if this doctor already has a Doctor entity linked by UserId
             var existingDoctor = await context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
 
             if (existingDoctor == null)
             {
-                // Create a Doctor entity for this user
-                var doctorEntity = new Doctor(user.Email?.Split('@')[0] ?? "Doctor")
+                // Try to find a seeded doctor with matching email but no UserId
+                existingDoctor = await context.Doctors.FirstOrDefaultAsync(d => d.DoctorEmail == user.Email && d.UserId == null);
+
+                if (existingDoctor != null)
                 {
-                    UserId = userId,
-                    DoctorEmail = user.Email
-                };
-                await context.Doctors.AddAsync(doctorEntity);
-                await context.SaveChangesAsync();
-                existingDoctor = doctorEntity;
+                    // Link the existing seeded doctor to this user
+                    existingDoctor.UserId = userId;
+                    await context.SaveChangesAsync();
+                    Console.WriteLine($"Linked existing doctor record to user {user.Email}");
+                }
+                else
+                {
+                    // Create a new Doctor entity for this user
+                    var doctorEntity = new Doctor(user.Name ?? user.Email?.Split('@')[0] ?? "Doctor")
+                    {
+                        UserId = userId,
+                        DoctorEmail = user.Email
+                    };
+                    await context.Doctors.AddAsync(doctorEntity);
+                    await context.SaveChangesAsync();
+                    existingDoctor = doctorEntity;
+                    Console.WriteLine($"Created new doctor record for user {user.Email}");
+                }
             }
             else
             {
