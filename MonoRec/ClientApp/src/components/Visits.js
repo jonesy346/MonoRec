@@ -9,7 +9,9 @@ function Visits() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [doctorId, setDoctorId] = useState(null);
+    const [currentPatientId, setCurrentPatientId] = useState(null);
     const [patients, setPatients] = useState({});
+    const [doctors, setDoctors] = useState({});
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [allPatients, setAllPatients] = useState([]);
@@ -52,6 +54,29 @@ function Visits() {
         return patientDetails;
     };
 
+    const fetchDoctorDetails = async (doctorIds) => {
+        const token = await authService.getAccessToken();
+        const doctorDetails = {};
+
+        for (const id of doctorIds) {
+            try {
+                const response = await fetch(`doctor/${id}`, {
+                    headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const doctor = await response.json();
+                    doctorDetails[id] = doctor;
+                }
+            } catch (error) {
+                console.error(`Error fetching doctor ${id}:`, error);
+            }
+        }
+
+        return doctorDetails;
+    };
+
     const populateVisits = async () => {
         try {
             const token = await authService.getAccessToken();
@@ -61,6 +86,8 @@ function Visits() {
                 url = `visit/patient/${patientId}/doctor/${doctorIdParam}`;
             } else if (patientId) {
                 url = `visit/patient/${patientId}`;
+            } else if (currentPatientId) {
+                url = `visit/patient/${currentPatientId}`;
             } else if (doctorIdParam) {
                 url = `visit/doctor/${doctorIdParam}`;
             } else if (doctorId) {
@@ -77,10 +104,16 @@ function Visits() {
                 const data = await response.json();
                 setVisits(data);
 
-                // Fetch patient details for doctors
-                const uniquePatientIds = [...new Set(data.map(v => v.patientId))];
-                const patientDetails = await fetchPatientDetails(uniquePatientIds);
-                setPatients(patientDetails);
+                // Fetch patient or doctor details based on user role
+                if (userRole === 'Doctor') {
+                    const uniquePatientIds = [...new Set(data.map(v => v.patientId))];
+                    const patientDetails = await fetchPatientDetails(uniquePatientIds);
+                    setPatients(patientDetails);
+                } else if (userRole === 'Patient') {
+                    const uniqueDoctorIds = [...new Set(data.map(v => v.doctorId))];
+                    const doctorDetails = await fetchDoctorDetails(uniqueDoctorIds);
+                    setDoctors(doctorDetails);
+                }
             } else {
                 console.error("Failed to fetch visits:", response.status);
                 setVisits([]);
@@ -150,6 +183,33 @@ function Visits() {
                     } else {
                         console.error('Failed to fetch doctors:', response.status, await response.text());
                     }
+                } else if (role === 'Patient') {
+                    // Try to load from cache first
+                    const cachedPatientId = localStorage.getItem('currentPatientId');
+                    if (cachedPatientId) {
+                        setCurrentPatientId(parseInt(cachedPatientId));
+                    }
+
+                    // Fetch current patient using currentUserOnly parameter
+                    const response = await fetch('patient?currentUserOnly=true', {
+                        headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const patients = await response.json();
+                        const currentPatient = patients[0];
+
+                        if (currentPatient) {
+                            console.log('Patient loaded:', currentPatient);
+                            setCurrentPatientId(currentPatient.patientId);
+                            localStorage.setItem('currentPatientId', currentPatient.patientId.toString());
+                        } else {
+                            console.error('No patient record found for user:', userId);
+                        }
+                    } else {
+                        console.error('Failed to fetch patient:', response.status, await response.text());
+                    }
                 }
             }
             setLoading(false);
@@ -159,11 +219,11 @@ function Visits() {
     }, []);
 
     useEffect(() => {
-        if (isAuthenticated && (doctorId || patientId || doctorIdParam)) {
+        if (isAuthenticated && (doctorId || currentPatientId || patientId || doctorIdParam)) {
             populateVisits();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, doctorId, patientId, doctorIdParam]);
+    }, [isAuthenticated, doctorId, currentPatientId, patientId, doctorIdParam]);
 
     useEffect(() => {
         if (isAuthenticated && userRole === 'Doctor') {
@@ -311,8 +371,17 @@ function Visits() {
                 <table className="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th>Patient Name</th>
-                            <th>Patient Email</th>
+                            {userRole === 'Doctor' ? (
+                                <>
+                                    <th>Patient Name</th>
+                                    <th>Patient Email</th>
+                                </>
+                            ) : (
+                                <>
+                                    <th>Doctor Name</th>
+                                    <th>Doctor Email</th>
+                                </>
+                            )}
                             <th>Date</th>
                             <th>Visit Note</th>
                             {userRole === 'Doctor' && <th>Actions</th>}
@@ -320,14 +389,14 @@ function Visits() {
                     </thead>
                     <tbody>
                         {Visits.map((visit, key) => {
-                            const patient = patients[visit.patientId];
-                            return (
-                                <tr key={key}>
-                                    <td>{patient ? patient.patientName : `Patient ${visit.patientId}`}</td>
-                                    <td>{patient ? patient.patientEmail : 'N/A'}</td>
-                                    <td>{new Date(visit.visitDate).toLocaleDateString()}</td>
-                                    <td>{visit.visitNote || 'No notes'}</td>
-                                    {userRole === 'Doctor' && (
+                            if (userRole === 'Doctor') {
+                                const patient = patients[visit.patientId];
+                                return (
+                                    <tr key={key}>
+                                        <td>{patient ? patient.patientName : `Patient ${visit.patientId}`}</td>
+                                        <td>{patient ? patient.patientEmail : 'N/A'}</td>
+                                        <td>{new Date(visit.visitDate).toLocaleDateString()}</td>
+                                        <td>{visit.visitNote || 'No notes'}</td>
                                         <td>
                                             <button
                                                 className="btn btn-primary btn-sm"
@@ -336,9 +405,19 @@ function Visits() {
                                                 Edit
                                             </button>
                                         </td>
-                                    )}
-                                </tr>
-                            );
+                                    </tr>
+                                );
+                            } else {
+                                const doctor = doctors[visit.doctorId];
+                                return (
+                                    <tr key={key}>
+                                        <td>{doctor ? doctor.doctorName : `Doctor ${visit.doctorId}`}</td>
+                                        <td>{doctor ? doctor.doctorEmail : 'N/A'}</td>
+                                        <td>{new Date(visit.visitDate).toLocaleDateString()}</td>
+                                        <td>{visit.visitNote || 'No notes'}</td>
+                                    </tr>
+                                );
+                            }
                         })}
                     </tbody>
                 </table>
