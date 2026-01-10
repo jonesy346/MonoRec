@@ -48,6 +48,25 @@ public static class DbInitializer
             Console.WriteLine($"Populated emails for {doctorsWithoutEmail.Count} existing doctors.");
         }
 
+        // Populate PatientEmail for existing patients that have a UserId but no email
+        var patientsWithoutEmail = await context.Patients
+            .Where(p => p.UserId != null && p.PatientEmail == null)
+            .ToListAsync();
+
+        if (patientsWithoutEmail.Any())
+        {
+            foreach (var patient in patientsWithoutEmail)
+            {
+                var user = await userManager.FindByIdAsync(patient.UserId);
+                if (user != null)
+                {
+                    patient.PatientEmail = user.Email;
+                }
+            }
+            await context.SaveChangesAsync();
+            Console.WriteLine($"Populated emails for {patientsWithoutEmail.Count} existing patients.");
+        }
+
         // Check if data already exists
         if (await context.Doctors.AnyAsync())
         {
@@ -82,13 +101,28 @@ public static class DbInitializer
         await context.SaveChangesAsync();
         Console.WriteLine("Seeded 10 sample doctors.");
 
-        // Seed 10 sample patients (not linked to user accounts)
-        var patientFirstNames = new[] { "Alice", "Bob", "Charlie", "Diana", "Edward", "Fiona", "George", "Hannah", "Isaac", "Julia" };
+        // Seed 10 sample patients (not linked to user accounts, but with email addresses for display)
+        var patientData = new[]
+        {
+            ("Alice", "alice@monorec.com"),
+            ("Bob", "bob@monorec.com"),
+            ("Charlie", "charlie@monorec.com"),
+            ("Diana", "diana@monorec.com"),
+            ("Edward", "edward@monorec.com"),
+            ("Fiona", "fiona@monorec.com"),
+            ("George", "george@monorec.com"),
+            ("Hannah", "hannah@monorec.com"),
+            ("Isaac", "isaac@monorec.com"),
+            ("Julia", "julia@monorec.com")
+        };
         var patients = new List<Patient>();
 
-        foreach (var name in patientFirstNames)
+        foreach (var (name, email) in patientData)
         {
-            var patient = new Patient($"{name} Patient");
+            var patient = new Patient($"{name} Patient")
+            {
+                PatientEmail = email
+            };
             patients.Add(patient);
         }
         await context.Patients.AddRangeAsync(patients);
@@ -273,7 +307,8 @@ public static class DbInitializer
                 // Create a Patient entity for this user
                 var patientEntity = new Patient(user.Email?.Split('@')[0] ?? "Patient")
                 {
-                    UserId = userId
+                    UserId = userId,
+                    PatientEmail = user.Email
                 };
                 await context.Patients.AddAsync(patientEntity);
                 await context.SaveChangesAsync();

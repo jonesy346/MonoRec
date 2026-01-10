@@ -9,7 +9,7 @@ public class Patient
     // This creates a relationship between the Patient entity and their login account
     public string? UserId { get; set; }
 
-    //public string? PatientEmail { get; set; }
+    public string? PatientEmail { get; set; }
     //private string? _patientPassword;
     //public Gender? PatientSex { get; set; }
     //public int PatientAge { get; set; }

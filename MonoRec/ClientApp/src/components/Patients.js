@@ -195,8 +195,8 @@ function Patients(props) {
     const tableRows = Patients.map((val, key) => {
         return (
             <tr key={key}>
-                <td>{val.patientId}</td>
                 <td>{val.patientName}</td>
+                <td>{val.patientEmail}</td>
                 <td><button className="btn btn-primary" onClick={incrementPatientId}>Edit</button></td>
             </tr>
         );
@@ -231,8 +231,8 @@ function Patients(props) {
                 <table>
                     <thead>
                         <tr>
-                            <th>Id</th>
                             <th>Name</th>
+                            <th>Email</th>
                             <th>Button</th>
                         </tr>
                     </thead>
