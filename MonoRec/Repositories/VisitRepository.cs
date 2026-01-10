@@ -38,6 +38,17 @@ namespace MonoRec.Repositories
 
             if (doctor == null || patient == null) return null;
 
+            // Check if doctor-patient relationship exists
+            var existingRelationship = _db.DoctorsPatients
+                .FirstOrDefault(dp => dp.DoctorId == docId && dp.PatientId == patId);
+
+            // Create the relationship if it doesn't exist
+            if (existingRelationship == null)
+            {
+                var doctorPatient = new DoctorPatient(docId, patId);
+                _db.DoctorsPatients.Add(doctorPatient);
+            }
+
             var newVisit = new Visit(patId, docId);
             _db.Visits.Add(newVisit);
             _db.SaveChanges();
