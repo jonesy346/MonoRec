@@ -28,7 +28,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("{visitId}")]
-    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Patient,Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetVisit(int visitId)
@@ -41,7 +41,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpPost("{patId}/{docId}")]
-    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult CreateNewVisit(int patId, int docId)
@@ -54,7 +54,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpGet("patient/{patId}")]
-    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Patient,Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Patient,Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Visit>))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAllVisitsByPatient(int patId)
@@ -92,7 +92,7 @@ public class VisitController : ControllerBase
     }
 
     [HttpDelete("{visitId}")]
-    [Authorize(AuthenticationSchemes = "IdentityServerJwt", Roles = "Doctor")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult DeleteVisit(int visitId)
@@ -111,5 +111,24 @@ public class VisitController : ControllerBase
         var result = _monoRecRepository.GetUpcomingVisits();
         return Ok(result);
     }
+
+    [HttpPut("{visitId}")]
+    [Authorize(AuthenticationSchemes = "Identity.Application,IdentityServerJwt", Roles = "Doctor")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Visit))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult UpdateVisit(int visitId, [FromBody] UpdateVisitRequest request)
+    {
+        var result = _monoRecRepository.UpdateVisit(visitId, request.VisitDate, request.VisitNote);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
+    }
+}
+
+public class UpdateVisitRequest
+{
+    public DateTime? VisitDate { get; set; }
+    public string? VisitNote { get; set; }
 }
 

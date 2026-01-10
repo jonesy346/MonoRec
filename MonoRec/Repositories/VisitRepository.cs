@@ -109,5 +109,25 @@ namespace MonoRec.Repositories
             return upcomingVisits;
         }
 
+        public Visit? UpdateVisit(int VisitId, DateTime? VisitDate, string? VisitNote)
+        {
+            var visit = _db.Visits.FirstOrDefault(v => v.VisitId == VisitId);
+
+            if (visit == null) return null;
+
+            if (VisitDate.HasValue)
+            {
+                visit.VisitDate = VisitDate.Value;
+            }
+
+            if (VisitNote != null)
+            {
+                visit.VisitNote = VisitNote;
+            }
+
+            _db.SaveChanges();
+            return visit;
+        }
+
     }
 }
