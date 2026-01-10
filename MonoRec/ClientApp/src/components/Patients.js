@@ -1,7 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from './api-authorization/AuthorizeService'
 
-function Patients(props) {
+function Patients() {
+    const navigate = useNavigate();
 
     //const [Date, setDate] = useState('');
     //const [Notes, setNotes] = useState('');
@@ -66,21 +68,58 @@ function Patients(props) {
     //    </div>
     //);
 
-    const [PatientId, setPatientId] = useState(0);
     const [Patients, setPatients] = useState([]);
-    const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [doctorId, setDoctorId] = useState(null);
+    const [hiddenPatientIds, setHiddenPatientIds] = useState(null);
+    const [addedPatientIds, setAddedPatientIds] = useState(null);
+    const [storageLoaded, setStorageLoaded] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [allPatients, setAllPatients] = useState([]);
+    const [selectedPatientId, setSelectedPatientId] = useState('');
+
+    // Load hidden and added patient IDs from localStorage on mount
+    useEffect(() => {
+        const storedHidden = localStorage.getItem('hiddenPatientIds');
+        const storedAdded = localStorage.getItem('addedPatientIds');
+
+        if (storedHidden) {
+            try {
+                setHiddenPatientIds(JSON.parse(storedHidden));
+            } catch (e) {
+                console.error('Failed to parse hidden patient IDs from localStorage', e);
+                setHiddenPatientIds([]);
+            }
+        } else {
+            setHiddenPatientIds([]);
+        }
+
+        if (storedAdded) {
+            try {
+                setAddedPatientIds(JSON.parse(storedAdded));
+            } catch (e) {
+                console.error('Failed to parse added patient IDs from localStorage', e);
+                setAddedPatientIds([]);
+            }
+        } else {
+            setAddedPatientIds([]);
+        }
+
+        setStorageLoaded(true);
+    }, []);
 
     useEffect(() => {
+        // Don't initialize until localStorage is loaded
+        if (!storageLoaded) return;
+
         const initialize = async () => {
             const authenticated = await authService.isAuthenticated();
             setIsAuthenticated(authenticated);
 
             if (authenticated) {
                 const currentUser = await authService.getUser();
-                setUser(currentUser);
                 const role = currentUser.role || 'User';
                 setUserRole(role);
 
@@ -90,10 +129,89 @@ function Patients(props) {
         };
 
         initialize();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [storageLoaded]);
 
-    const incrementPatientId = () => {
-        setPatientId(PatientId + 1);
+    const handleViewVisits = (patientId) => {
+        // Navigate to visits page filtered by doctor and patient
+        navigate(`/visiturl?doctorId=${doctorId}&patientId=${patientId}`);
+    }
+
+    const handleRemovePatient = (patientId, isAddedPatient) => {
+        const message = isAddedPatient
+            ? 'Remove this patient from your list?'
+            : 'Remove this patient from your list? (Visit history will be preserved)';
+
+        if (window.confirm(message)) {
+            if (isAddedPatient) {
+                // Remove from added list
+                const newAddedIds = addedPatientIds.filter(id => id !== patientId);
+                setAddedPatientIds(newAddedIds);
+                localStorage.setItem('addedPatientIds', JSON.stringify(newAddedIds));
+            } else {
+                // Add to hidden list
+                const newHiddenIds = [...hiddenPatientIds, patientId];
+                setHiddenPatientIds(newHiddenIds);
+                localStorage.setItem('hiddenPatientIds', JSON.stringify(newHiddenIds));
+            }
+
+            // Update displayed patients
+            setPatients(Patients.filter(pat => pat.patientId !== patientId));
+        }
+    }
+
+    const handleShowAddModal = async () => {
+        // Fetch all patients for the dropdown
+        try {
+            const token = await authService.getAccessToken();
+            const response = await fetch('patient', {
+                headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const patients = await response.json();
+                setAllPatients(patients);
+                setShowAddModal(true);
+            }
+        } catch (error) {
+            console.error('Failed to fetch all patients:', error);
+        }
+    }
+
+    const handleAddPatient = async () => {
+        if (!selectedPatientId) return;
+
+        const patientId = parseInt(selectedPatientId);
+
+        // Check if already in the list
+        const currentPatientIds = Patients.map(p => p.patientId);
+        if (currentPatientIds.includes(patientId)) {
+            alert('This patient is already in your list');
+            return;
+        }
+
+        // Add to localStorage
+        const newAddedIds = [...addedPatientIds, patientId];
+        setAddedPatientIds(newAddedIds);
+        localStorage.setItem('addedPatientIds', JSON.stringify(newAddedIds));
+
+        // Remove from hidden list if it was there
+        if (hiddenPatientIds.includes(patientId)) {
+            const newHiddenIds = hiddenPatientIds.filter(id => id !== patientId);
+            setHiddenPatientIds(newHiddenIds);
+            localStorage.setItem('hiddenPatientIds', JSON.stringify(newHiddenIds));
+        }
+
+        // Find the patient and add to display
+        const patientToAdd = allPatients.find(p => p.patientId === patientId);
+        if (patientToAdd) {
+            setPatients([...Patients, { ...patientToAdd, isAdded: true }]);
+        }
+
+        // Close modal and reset
+        setShowAddModal(false);
+        setSelectedPatientId('');
     }
 
     const populatePatients = async (currentUser, role) => {
@@ -141,6 +259,9 @@ function Patients(props) {
                 console.log("Found doctor:", currentDoctor);
 
                 if (currentDoctor) {
+                    // Store doctorId for later use
+                    setDoctorId(currentDoctor.doctorId);
+
                     // Fetch patients for this doctor
                     console.log(`Fetching patients for doctor ${currentDoctor.doctorId}...`);
                     response = await fetch(`doctor/${currentDoctor.doctorId}/patient`, {
@@ -180,7 +301,12 @@ function Patients(props) {
                 try {
                     const data = JSON.parse(responseText);
                     console.log("Parsed patients data:", data);
-                    setPatients(data);
+
+                    // Filter out hidden patients based on localStorage
+                    const visiblePatients = data.filter(pat => !hiddenPatientIds.includes(pat.patientId));
+
+                    // Merge with added patients from localStorage
+                    await mergeAddedPatients(visiblePatients);
                 } catch (e) {
                     console.error("Failed to parse patients JSON:", e);
                     console.error("Response text was:", responseText);
@@ -192,14 +318,75 @@ function Patients(props) {
         }
     }
 
+    const mergeAddedPatients = async (backendPatients) => {
+        try {
+            // If no added patients, just set backend patients
+            if (!addedPatientIds || addedPatientIds.length === 0) {
+                setPatients(backendPatients);
+                return;
+            }
+
+            // Fetch details for added patients
+            const token = await authService.getAccessToken();
+            const addedPatientDetails = [];
+
+            for (const patientId of addedPatientIds) {
+                // Skip if already in backend patients or hidden
+                if (backendPatients.find(p => p.patientId === patientId) || hiddenPatientIds.includes(patientId)) {
+                    continue;
+                }
+
+                const response = await fetch(`patient/${patientId}`, {
+                    headers: !token ? {} : { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const patient = await response.json();
+                    addedPatientDetails.push({ ...patient, isAdded: true });
+                }
+            }
+
+            // Combine backend and added patients
+            setPatients([...backendPatients, ...addedPatientDetails]);
+        } catch (error) {
+            console.error('Error merging added patients:', error);
+            setPatients(backendPatients);
+        }
+    }
+
     const tableRows = Patients.map((val, key) => {
         return (
             <tr key={key}>
-                <td>{val.patientName}</td>
+                <td>
+                    {val.patientName}
+                    {val.isAdded && <span className="badge bg-info ms-2">Added</span>}
+                </td>
                 <td>{val.patientEmail}</td>
-                <td><button className="btn btn-primary" onClick={incrementPatientId}>Edit</button></td>
+                <td>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleViewVisits(val.patientId)}
+                    >
+                        View Visits
+                    </button>
+                </td>
+                <td>
+                    <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleRemovePatient(val.patientId, val.isAdded)}
+                    >
+                        Remove
+                    </button>
+                </td>
             </tr>
         );
+    });
+
+    // Filter available patients for the dropdown (exclude already displayed ones)
+    const availablePatients = allPatients.filter(pat => {
+        const isDisplayed = Patients.find(p => p.patientId === pat.patientId);
+        return !isDisplayed;
     });
 
     if (loading) {
@@ -228,18 +415,81 @@ function Patients(props) {
             )}
 
             {Patients.length > 0 && (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Button</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tableRows}
-                    </tbody>
-                </table>
+                <>
+                    <table className="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Visits</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tableRows}
+                        </tbody>
+                    </table>
+                    <button className="btn btn-success mt-3" onClick={handleShowAddModal}>
+                        Add Patient
+                    </button>
+                </>
+            )}
+
+            {Patients.length === 0 && userRole === 'Doctor' && (
+                <button className="btn btn-success mt-3" onClick={handleShowAddModal}>
+                    Add Patient
+                </button>
+            )}
+
+            {/* Add Patient Modal */}
+            {showAddModal && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Add Patient</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowAddModal(false)}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <label htmlFor="patientSelect" className="form-label">Select a patient:</label>
+                                <select
+                                    id="patientSelect"
+                                    className="form-select"
+                                    value={selectedPatientId}
+                                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                                >
+                                    <option value="">-- Choose a patient --</option>
+                                    {availablePatients.map(pat => (
+                                        <option key={pat.patientId} value={pat.patientId}>
+                                            {pat.patientName} ({pat.patientEmail})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => setShowAddModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleAddPatient}
+                                    disabled={!selectedPatientId}
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
