@@ -1,53 +1,62 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Collapse, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import { LoginMenu } from './api-authorization/LoginMenu';
+import authService from './api-authorization/AuthorizeService';
 import './NavMenu.css';
 
-export class NavMenu extends Component {
-  static displayName = NavMenu.name;
+export function NavMenu() {
+  const [collapsed, setCollapsed] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  constructor (props) {
-    super(props);
-
-    this.toggleNavbar = this.toggleNavbar.bind(this);
-    this.state = {
-      collapsed: true
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authenticated = await authService.isAuthenticated();
+      setIsAuthenticated(authenticated);
     };
-  }
 
-  toggleNavbar () {
-    this.setState({
-      collapsed: !this.state.collapsed
-    });
-  }
+    checkAuth();
 
-  render() {
-    return (
-      <header>
-        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" container light>
-          <NavbarBrand tag={Link} to="/">MonoRec</NavbarBrand>
-          <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
-          <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
-            <ul className="navbar-nav flex-grow">
-              <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/patienturl">Patients</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/doctorurl">Doctors</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/visiturl">Visits</NavLink>
-              </NavItem>
-              <LoginMenu>
-              </LoginMenu>
-            </ul>
-          </Collapse>
-        </Navbar>
-      </header>
-    );
-  }
+    // Subscribe to authentication changes
+    const subscription = authService.subscribe(() => checkAuth());
+
+    return () => {
+      authService.unsubscribe(subscription);
+    };
+  }, []);
+
+  const toggleNavbar = () => {
+    setCollapsed(!collapsed);
+  };
+
+  return (
+    <header>
+      <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" container light>
+        <NavbarBrand tag={Link} to="/">MonoRec</NavbarBrand>
+        <NavbarToggler onClick={toggleNavbar} className="mr-2" />
+        <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
+          <ul className="navbar-nav flex-grow">
+            <NavItem>
+              <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
+            </NavItem>
+            {isAuthenticated && (
+              <>
+                <NavItem>
+                  <NavLink tag={Link} className="text-dark" to="/patienturl">Patients</NavLink>
+                </NavItem>
+                <NavItem>
+                  <NavLink tag={Link} className="text-dark" to="/doctorurl">Doctors</NavLink>
+                </NavItem>
+                <NavItem>
+                  <NavLink tag={Link} className="text-dark" to="/visiturl">Visits</NavLink>
+                </NavItem>
+              </>
+            )}
+            <LoginMenu>
+            </LoginMenu>
+          </ul>
+        </Collapse>
+      </Navbar>
+    </header>
+  );
 }
