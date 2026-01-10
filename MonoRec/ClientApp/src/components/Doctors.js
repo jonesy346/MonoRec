@@ -10,7 +10,8 @@ function Doctors() {
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
     const [patientId, setPatientId] = useState(null);
-    const [hiddenDoctorIds, setHiddenDoctorIds] = useState([]);
+    const [hiddenDoctorIds, setHiddenDoctorIds] = useState(null); // null means not yet loaded
+    const [storageLoaded, setStorageLoaded] = useState(false);
 
     // Load hidden doctor IDs from localStorage on mount
     useEffect(() => {
@@ -22,10 +23,16 @@ function Doctors() {
                 console.error('Failed to parse hidden doctor IDs from localStorage', e);
                 setHiddenDoctorIds([]);
             }
+        } else {
+            setHiddenDoctorIds([]);
         }
+        setStorageLoaded(true);
     }, []);
 
     useEffect(() => {
+        // Don't initialize until localStorage is loaded
+        if (!storageLoaded) return;
+
         const initialize = async () => {
             const authenticated = await authService.isAuthenticated();
             setIsAuthenticated(authenticated);
@@ -42,7 +49,7 @@ function Doctors() {
 
         initialize();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenDoctorIds]);
+    }, [storageLoaded]);
 
     const handleViewVisits = (doctorId) => {
         // Navigate to visits page filtered by patient and doctor
