@@ -136,23 +136,52 @@ During registration:
 MonoRec implements role-based authorization with secure data filtering to protect sensitive patient information.
 
 #### Doctor Role
-Doctors have elevated privileges:
+Doctors have full management privileges for patient care:
+
+**Patient Management:**
 - ✅ View all patients (`GET /patient`)
 - ✅ View patients affiliated with them (`GET /doctor/{doctorId}/patient`)
 - ✅ View all doctors (`GET /doctor`)
-- ✅ Create new visits (`POST /visit`)
-- ✅ Delete visits (`DELETE /visit/{id}`)
-- ✅ View visit details (`GET /visit/{id}`)
+
+**Visit Management:**
+- ✅ Create new visits (`POST /visit`) - Add visits for their patients
+- ✅ Edit visits - Update visit details and doctor notes
+- ✅ Delete visits (`DELETE /visit/{id}`) - Remove visits from the system
+- ✅ View visit details (`GET /visit/{id}`) - Full access to all visit information
+
+**What Doctors Can Do in the UI:**
+- Browse and view all patients in the system
+- See their affiliated patients on the "Patients" page
+- Create new visits from the Patients page
+- Edit existing visit information and add doctor notes
+- Delete visits if needed
+- View complete visit history and details
 
 #### Patient Role
-Patients have restricted access with secure filtering:
-- ✅ View all doctors (`GET /doctor`) - to discover affiliated doctors
+Patients have view-only access with restricted data visibility:
+
+**Patient Management:**
+- ✅ View all doctors (`GET /doctor`) - Discover available doctors
 - ✅ View only their own patient record (`GET /patient?currentUserOnly=true`)
 - ✅ View doctors affiliated with them (`GET /patient/{patientId}/doctor`)
-- ✅ View their own visit details (`GET /visit/{id}`)
+
+**Visit Management:**
+- ✅ View visit details (`GET /visit/{id}`) - **Read-only access** to their own visits
+- ❌ Cannot create new visits - Only doctors can schedule visits
+- ❌ Cannot edit visits - Cannot modify visit details or doctor notes
+- ❌ Cannot delete visits - No ability to remove visit records
+
+**Security Restrictions:**
 - ❌ Cannot view other patients' data
-- ❌ Cannot create or delete visits
-- ❌ Cannot access full patient list
+- ❌ Cannot access the full patient list
+- ❌ Cannot modify any visit information
+
+**What Patients Can Do in the UI:**
+- View the "Doctors" page to see all doctors in the system
+- See their affiliated doctors
+- View their own visit history (read-only)
+- See visit details including date, doctor, and notes
+- Cannot add, edit, or delete any visit information
 
 #### Security Implementation
 
