@@ -313,20 +313,43 @@ public static class DbInitializer
         }
         else if (userRole == "Patient")
         {
-            // Check if this patient already has a Patient entity
+            // First check if this patient already has a Patient entity linked by UserId
             var existingPatient = await context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
 
             if (existingPatient == null)
             {
-                // Create a Patient entity for this user
-                var patientEntity = new Patient(user.Email?.Split('@')[0] ?? "Patient")
+                // Try to find a seeded patient with matching email but no UserId
+                existingPatient = await context.Patients.FirstOrDefaultAsync(p => p.PatientEmail == user.Email && p.UserId == null);
+
+                if (existingPatient != null)
                 {
-                    UserId = userId,
-                    PatientEmail = user.Email
-                };
-                await context.Patients.AddAsync(patientEntity);
-                await context.SaveChangesAsync();
-                existingPatient = patientEntity;
+                    // Link the existing seeded patient to this user
+                    existingPatient.UserId = userId;
+                    await context.SaveChangesAsync();
+                    Console.WriteLine($"Linked existing patient record to user {user.Email}");
+                }
+                else
+                {
+                    // Create a new Patient entity for this user
+                    var patientEntity = new Patient(user.Name ?? user.Email?.Split('@')[0] ?? "Patient")
+                    {
+                        UserId = userId,
+                        PatientEmail = user.Email
+                    };
+                    await context.Patients.AddAsync(patientEntity);
+                    await context.SaveChangesAsync();
+                    existingPatient = patientEntity;
+                    Console.WriteLine($"Created new patient record for user {user.Email}");
+                }
+            }
+            else
+            {
+                // Update email if it's missing
+                if (string.IsNullOrEmpty(existingPatient.PatientEmail))
+                {
+                    existingPatient.PatientEmail = user.Email;
+                    await context.SaveChangesAsync();
+                }
             }
 
             // Check if this patient already has doctor associations

@@ -263,8 +263,6 @@ function Visits() {
         try {
             const token = await authService.getAccessToken();
 
-            console.log('Creating visit with patientId:', createFormData.patientId, 'doctorId:', doctorId);
-
             const createResponse = await fetch(`visit/${createFormData.patientId}/${doctorId}`, {
                 method: 'POST',
                 headers: {
