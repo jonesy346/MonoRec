@@ -6,6 +6,7 @@ public class Visit
     public int PatientId { get; set; }
     public int DoctorId { get; set; }
     public DateTime VisitDate { get; set; }
+    public string? VisitNote { get; set; }
     //public string? Symptoms { get; set; }
     //public string? Diagnosis { get; set; }
 
