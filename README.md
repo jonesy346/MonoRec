@@ -138,153 +138,75 @@ MonoRec implements role-based authorization with secure data filtering to protec
 #### Doctor Role
 Doctors have full management privileges for patient care:
 
-**Patient Management:**
-- ✅ View all patients (`GET /patient`)
-- ✅ View patients affiliated with them (`GET /doctor/{doctorId}/patient`)
-- ✅ View all doctors (`GET /doctor`)
-
-**Visit Management:**
-- ✅ Create new visits (`POST /visit`) - Add visits for their patients
-- ✅ Edit visits - Update visit details and doctor notes
-- ✅ Delete visits (`DELETE /visit/{id}`) - Remove visits from the system
-- ✅ View visit details (`GET /visit/{id}`) - Full access to all visit information
-
-**What Doctors Can Do in the UI:**
-- Browse and view all patients in the system
-- See their affiliated patients on the "Patients" page
-- Create new visits from the Patients page
-- Edit existing visit information and add doctor notes
-- Delete visits if needed
-- View complete visit history and details
+- ✅ View all patients and doctors
+- ✅ View affiliated patients
+- ✅ Create, edit, and delete visits
+- ✅ Add and modify doctor notes
+- ✅ Full access to visit history and details
 
 #### Patient Role
 Patients have view-only access with restricted data visibility:
 
-**Patient Management:**
-- ✅ View all doctors (`GET /doctor`) - Discover available doctors
-- ✅ View only their own patient record (`GET /patient?currentUserOnly=true`)
-- ✅ View doctors affiliated with them (`GET /patient/{patientId}/doctor`)
-
-**Visit Management:**
-- ✅ View visit details (`GET /visit/{id}`) - **Read-only access** to their own visits
-- ❌ Cannot create new visits - Only doctors can schedule visits
-- ❌ Cannot edit visits - Cannot modify visit details or doctor notes
-- ❌ Cannot delete visits - No ability to remove visit records
-
-**Security Restrictions:**
+- ✅ View all doctors and their affiliated doctors
+- ✅ View only their own patient record
+- ✅ **Read-only** access to their own visit history and details
 - ❌ Cannot view other patients' data
-- ❌ Cannot access the full patient list
-- ❌ Cannot modify any visit information
-
-**What Patients Can Do in the UI:**
-- View the "Doctors" page to see all doctors in the system
-- See their affiliated doctors
-- View their own visit history (read-only)
-- See visit details including date, doctor, and notes
-- Cannot add, edit, or delete any visit information
+- ❌ Cannot create, edit, or delete visits
 
 #### Security Implementation
 
-The application uses backend filtering to protect sensitive data:
-
-1. **Query Parameter Filtering** - The `GET /patient?currentUserOnly=true` endpoint filters results server-side based on the authenticated user's ID. This prevents patients from accessing other patients' data while still allowing them to retrieve their own patient entity.
-
-2. **"sub" Claim** - User identification uses the `sub` claim from IdentityServer, which is consistent across both cookie-based (Identity.Application) and JWT-based (IdentityServerJwt) authentication schemes.
-
-3. **Role-Based Access Control** - When `currentUserOnly=false` (or omitted), the `GET /patient` endpoint requires the Doctor role. Non-doctors receive an empty list.
-
-4. **Dual Authentication** - All protected endpoints accept both authentication schemes:
-   - `Identity.Application` - Cookie-based authentication
-   - `IdentityServerJwt` - JWT token authentication
-
-   This ensures seamless authentication whether accessing from server-rendered pages or the React SPA.
+- **Query Parameter Filtering** - `GET /patient?currentUserOnly=true` filters server-side by user ID, preventing patients from accessing other patients' data
+- **Role-Based Access Control** - Doctor role required for full patient list access
+- **"sub" Claim** - Consistent user identification across cookie and JWT authentication
+- **Dual Authentication** - All endpoints accept both `Identity.Application` (cookies) and `IdentityServerJwt` (JWT tokens)
 
 ### Auth Health Check
-Navigate to `/auth-health-check` to view:
-- Current authentication status
-- User ID
-- Email address
-- Full name
-- Assigned role(s)
-
-This is useful for verifying your login status and understanding what permissions you have.
+Navigate to `/auth-health-check` to view your authentication status, user ID, email, name, and assigned roles.
 
 ## Seeded Accounts & Test Data
 
-On first run, the database is seeded with test data:
+On first run, the database is seeded with:
 
-### User Accounts
-- **Doctor**: `doctor@example.com` / `Password123!` (Doctor role)
-- **Patient**: `patient@example.com` / `Password123!` (Patient role)
+**User Accounts:**
+- **Doctor**: `doctor@example.com` / `Password123!`
+- **Patient**: `patient@example.com` / `Password123!`
 - **Test User**: `test@test.com` / `Welcome123!` (No role)
 
-Corresponding Doctor and Patient entities are automatically created and linked via `UserId`.
+**Entities:**
+- 10 Doctors (Dr. Smith, Dr. Johnson, Dr. Williams, etc.)
+- 10 Patients (Alice, Bob, Charlie, Diana, etc.)
+- Random doctor-patient relationships (each entity linked with 2-4 others)
 
-### Seeded Entities
-The application also seeds:
-- **10 Doctors** (Dr. Smith, Dr. Johnson, Dr. Williams, etc.)
-- **10 Patients** (Alice, Bob, Charlie, Diana, etc.)
-- **Random Doctor-Patient Relationships** - Each seeded entity is randomly linked with 2-4 entities of the opposite type
-
-### Auto-Linking on First Login
-When a newly registered user logs in for the first time:
-1. The system detects they have no affiliated doctors/patients
-2. Automatically links them with 3 random seeded entities
-3. For doctors: Gets 3 random seeded patients
-4. For patients: Gets 3 random seeded doctors
-
-This ensures every new user has data to explore immediately after registration.
-
-### Testing with Seeded Accounts
-To test the application with multiple pre-configured users:
-
-1. Register new accounts:
-   - `doc1@gmail.com` / `Password` (Doctor role)
-   - `pat1@gmail.com` / `Password` (Patient role)
-
-2. On first login, these accounts will be automatically linked to seeded entities
-
-3. Navigate to:
-   - **Doctors as Patient**: See your 3 affiliated doctors
-   - **Patients as Doctor**: See your 3 affiliated patients
-   - **Home Page**: View upcoming visits for affiliated relationships
+**Auto-Linking:**
+When a newly registered user logs in for the first time, they're automatically linked with 3 random seeded entities (doctors get patients, patients get doctors). This ensures immediate data to explore.
 
 ## Development
 
-### Hot Reload
-The React dev server supports hot reload. Edit any file in `ClientApp/src/` and the browser will automatically update.
-
 ### Database Migrations
-When you modify models, create a new migration:
+Create migrations when you modify models:
 ```bash
 # For MonoRec entities (Doctor, Patient, Visit)
 dotnet ef migrations add YourMigrationName --context MonoRecDbContext
 
 # For Identity entities (Users, Roles)
 dotnet ef migrations add YourMigrationName --context ApplicationDbContext
-```
 
-Apply migrations:
-```bash
+# Apply migrations
 dotnet ef database update --context MonoRecDbContext
 dotnet ef database update --context ApplicationDbContext
 ```
 
 ### Reset Database
-To start fresh with seeded data:
 ```bash
 rm MonoRec/app.db
 dotnet run
 ```
 
 ### Production Build
-Build the React app for production:
 ```bash
 cd ClientApp
 npm run build
 ```
-
-The built files will be copied to `wwwroot/` during `dotnet publish`.
 
 ## Project Structure
 
@@ -304,18 +226,15 @@ MonoRec/
 
 ## Configuration
 
-### Database
-- **Local Development**: SQLite (`app.db` in project root)
-- **Production**: SQL Server (connection strings in `appsettings.json`)
-
-To switch to SQL Server, uncomment the AWS configuration in `Program.cs` and `appsettings.json`.
+**Database:**
+- Local Development: SQLite (`app.db`)
+- Production: SQL Server (uncomment AWS configuration in `Program.cs` and `appsettings.json`)
 
 ## Known Limitations
 
-- **HTTPS Certificate**: HTTPS is disabled in development due to certificate issues on macOS. The app runs on HTTP only for local development.
-- **Email Confirmation**: Email confirmation is disabled (`RequireConfirmedAccount = false`). Production should implement proper email verification.
-- **Email Validation**: Only basic email format validation is enforced (`username@domain.extension`). The email doesn't need to be valid or deliverable.
-- **Password Requirements**: Disabled for development convenience (minimum 1 character). Production should enforce strong password policies.
-- **User-Entity Linking**: The `UserId` field provides a conceptual link between Identity users and business entities, but there's no foreign key constraint enforced at the database level.
-- **Frontend Authorization**: While backend endpoints are protected with role-based authorization, the React frontend doesn't dynamically hide/show UI elements based on roles. Users may see UI elements for actions they cannot perform (the backend will reject unauthorized requests).
-- **Cross-Port Authentication**: The `/api/users/me` endpoint doesn't work when accessed directly in the browser due to cookie authentication not crossing the proxy boundary reliably. Use the Auth Health Check page instead, which properly uses JWT tokens.
+- **HTTPS**: Disabled in development (macOS certificate issues)
+- **Email Confirmation**: Disabled (`RequireConfirmedAccount = false`) - production should implement proper email verification
+- **Password Requirements**: Minimum 1 character for development - production should enforce strong policies
+- **User-Entity Linking**: No foreign key constraint at database level between Identity users and business entities
+- **Frontend Authorization**: UI doesn't dynamically hide/show elements based on roles (backend rejects unauthorized requests)
+- **Cross-Port Authentication**: `/api/users/me` doesn't work in browser - use Auth Health Check page instead
